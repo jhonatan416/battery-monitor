@@ -68,6 +68,28 @@ public class SettingsSerializerTests
         Assert.Contains(result.Warnings, w => w.Contains("pollIntervalSeconds"));
     }
 
+    [Theory]
+    [InlineData(AppSettings.MinThreshold)]
+    [InlineData(AppSettings.MaxThreshold)]
+    public void Threshold_at_the_range_limits_is_accepted(int threshold)
+    {
+        var result = SettingsSerializer.Parse($$"""{ "lowBatteryThreshold": {{threshold}} }""");
+
+        Assert.Equal(threshold, result.Settings.LowBatteryThreshold);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Theory]
+    [InlineData(AppSettings.MinPollSeconds)]
+    [InlineData(AppSettings.MaxPollSeconds)]
+    public void Poll_interval_at_the_range_limits_is_accepted(int seconds)
+    {
+        var result = SettingsSerializer.Parse($$"""{ "pollIntervalSeconds": {{seconds}} }""");
+
+        Assert.Equal(seconds, result.Settings.PollIntervalSeconds);
+        Assert.Empty(result.Warnings);
+    }
+
     [Fact]
     public void Blank_mouse_name_falls_back_to_default()
     {

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using BatteryMonitor.App.Settings;
 using BatteryMonitor.Core.Monitoring;
+using BatteryMonitor.Core.Ports;
 using BatteryMonitor.Core.Settings;
 
 namespace BatteryMonitor.App.Tray;
@@ -9,6 +10,7 @@ namespace BatteryMonitor.App.Tray;
 internal sealed class TrayApplicationContext : ApplicationContext
 {
     private readonly BatteryMonitorService _monitor;
+    private readonly IStartupRegistration _startup = new StartupRegistration();
     private readonly Dictionary<string, NotifyIcon> _icons = new();
     private readonly NotifyIcon _placeholder;
     private readonly System.Windows.Forms.Timer _timer = new();
@@ -95,7 +97,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         menu.Items.Add("Refresh now", null, (_, _) => PollInBackground());
         var startup = new ToolStripMenuItem("Start with Windows") { CheckOnClick = true };
         startup.CheckedChanged += (_, _) => ToggleStartup(startup);
-        menu.Opening += (_, _) => startup.Checked = StartupRegistration.IsEnabled(); // reflect the real registry state
+        menu.Opening += (_, _) => startup.Checked = _startup.IsEnabled(); // reflect the real registry state
         menu.Items.Add(startup);
         menu.Items.Add("Open settings file (restart to apply)", null, (_, _) => OpenSettingsFile());
         menu.Items.Add(new ToolStripSeparator());
@@ -103,15 +105,12 @@ internal sealed class TrayApplicationContext : ApplicationContext
         return new NotifyIcon { Text = text, Icon = icon, ContextMenuStrip = menu };
     }
 
-    private static void ToggleStartup(ToolStripMenuItem item)
+    private void ToggleStartup(ToolStripMenuItem item)
     {
-        if (item.Checked == StartupRegistration.IsEnabled()) return; // menu sync, not a user click
-        try { StartupRegistration.SetEnabled(item.Checked); }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException)
-        {
-            MessageBox.Show($"Could not change the startup setting: {ex.Message}", "Battery Monitor");
-            item.Checked = StartupRegistration.IsEnabled();
-        }
+        var result = StartupToggle.Apply(_startup, item.Checked); // no write when the menu is only re-syncing
+        if (item.Checked != result.Enabled) item.Checked = result.Enabled;
+        if (result.Error is { } error)
+            MessageBox.Show($"Could not change the startup setting: {error}", "Battery Monitor");
     }
 
     private static void OpenSettingsFile()
