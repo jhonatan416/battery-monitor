@@ -60,14 +60,15 @@ public sealed class BatteryMonitorService(
         var alerts = new List<DeviceBattery>();
         var fresh = new HashSet<string>();
 
-        foreach (var device in reported.Where(d => d.Percent is not null))
+        foreach (var device in reported)
         {
+            if (device.Percent is not int percent) continue; // no level this time: handled below
             if (!fresh.Add(device.Id)) continue; // first provider wins on duplicate ids
             if (!_tracked.TryGetValue(device.Id, out var t))
                 _tracked[device.Id] = t = new Tracked(device, now);
             t.Last = device;
             t.LastSeen = now;
-            if (UpdateAlert(t, device)) alerts.Add(device);
+            if (UpdateAlert(t, percent, device.Charging)) alerts.Add(device);
             readings.Add(new DeviceReading(device, now, Stale: false));
         }
 
@@ -85,10 +86,9 @@ public sealed class BatteryMonitorService(
             errors);
     }
 
-    private bool UpdateAlert(Tracked t, DeviceBattery d)
+    private bool UpdateAlert(Tracked t, int pct, bool charging)
     {
-        int pct = d.Percent!.Value;
-        if (d.Charging || pct >= options.LowThreshold + options.Hysteresis)
+        if (charging || pct >= options.LowThreshold + options.Hysteresis)
         {
             t.Alerted = false;
             return false;
