@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BatteryMonitor.App/BatteryMonitor.App.csproj" />
+    <Project Path="src/BatteryMonitor.Core/BatteryMonitor.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BatteryMonitor.Tests/BatteryMonitor.Tests.csproj" />
+  </Folder>
+</Solution>
