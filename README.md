@@ -22,6 +22,21 @@ dotnet test
 src/BatteryMonitor.App/bin/Release/net10.0-windows/BatteryMonitor.App.exe
 ```
 
+Tray menu (right-click any icon): **Refresh now**, **Start with Windows** (per-user, off by default),
+**Open settings file**, **Exit**.
+
+## Settings
+
+`%APPDATA%\BatteryMonitor\settings.json` is created with defaults on first run. Restart the app after editing it.
+
+| Setting | Default | Allowed |
+|---|---|---|
+| `lowBatteryThreshold` | `20` | 1–99 (percent) |
+| `pollIntervalSeconds` | `60` | 15–3600 |
+| `genericMouseName` | `"Memzuiox Mouse"` | any non-empty text |
+
+An invalid value is ignored (its default is used) and reported in a tray notification, and by `--once`.
+
 Command-line options:
 
 - `--once`: poll one time, print every device found, and exit (no tray icon).
@@ -37,10 +52,12 @@ BatteryMonitor.Core   (no Windows dependencies, fully unit tested)
   Ports/        IBatteryProvider          <- one adapter per device family
   Protocols/    RazerProtocol, GenericMouseProtocol (pure byte encoding/decoding)
   Monitoring/   BatteryMonitorService     (merges providers, grace period, low-battery alerts)
+  Settings/     AppSettings, SettingsSerializer (validation, never throws)
 
 BatteryMonitor.App    (Windows adapters + UI)
   Hid/          HID enumeration and feature reports (SetupAPI / hid.dll)
   Providers/    BluetoothBatteryProvider, RazerBatteryProvider, GenericMouseBatteryProvider
+  Settings/     SettingsStore (%APPDATA% file), StartupRegistration (HKCU Run key)
   Tray/         TrayApplicationContext, BatteryIconRenderer
   Program.cs    composition root
 ```
