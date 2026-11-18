@@ -8,7 +8,7 @@ with the percent drawn in the icon, a tooltip with details, and a notification w
 | Device | Connection | How the level is read | Status |
 |---|---|---|---|
 | Xbox Wireless Controller (and other Bluetooth devices) | Bluetooth | Windows Bluetooth battery property | Working |
-| Razer wireless mice (tested target: Viper V3 Pro SE, `1532:00DF`) | Razer receiver | Razer 90-byte feature report (class `07`, command `80`) | Implemented; not yet verified with the mouse awake |
+| Razer wireless mice (tested target: Viper V3 Pro SE, `1532:00DF`) | Razer receiver | Razer 90-byte feature report (class `07`, command `80`) | Working |
 | Memzuiox mouse (`248A:8366` receiver) | 2.4 GHz receiver | Feature report 5, byte 1 | Working; byte meaning still being confirmed |
 | kofire UG-06 headset (`4C4A:4155`) | USB dongle | Unknown | Not supported yet |
 
