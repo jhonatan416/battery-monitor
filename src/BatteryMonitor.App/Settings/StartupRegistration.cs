@@ -13,12 +13,22 @@ internal static class StartupRegistration
 
     private static string Command => $"\"{Environment.ProcessPath}\"";
 
-    /// <summary>True when the Run entry points at this executable.</summary>
+    /// <summary>
+    /// True when the Run entry points at this executable. Never throws: an unreadable key
+    /// (Group Policy, security software) reports "off" so the tray menu stays usable.
+    /// </summary>
     public static bool IsEnabled()
     {
-        using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath);
-        return key?.GetValue(ValueName) is string value &&
-               string.Equals(value, Command, StringComparison.OrdinalIgnoreCase);
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath);
+            return key?.GetValue(ValueName) is string value &&
+                   string.Equals(value, Command, StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
+        {
+            return false;
+        }
     }
 
     public static void SetEnabled(bool enabled)
