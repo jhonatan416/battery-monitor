@@ -10,7 +10,11 @@ namespace BatteryMonitor.App.Providers;
 /// whatever the brand. Skips Bluetooth HID (the Bluetooth provider reports those) and vendors that
 /// have their own provider.
 /// </summary>
-public sealed class GenericHidBatteryProvider(IReadOnlySet<ushort> vendorsWithOwnProvider) : IBatteryProvider
+/// <param name="vendorsWithOwnProvider">Vendors handled entirely by a dedicated provider.</param>
+/// <param name="productHasOwnProvider">Single products handled by a dedicated provider (e.g. headsets).</param>
+public sealed class GenericHidBatteryProvider(
+    IReadOnlySet<ushort> vendorsWithOwnProvider,
+    Func<ushort, ushort, bool> productHasOwnProvider) : IBatteryProvider
 {
     public string Name => "Generic HID";
 
@@ -18,7 +22,8 @@ public sealed class GenericHidBatteryProvider(IReadOnlySet<ushort> vendorsWithOw
     {
         var result = new List<DeviceBattery>();
         var products = HidCollection.Enumerate()
-            .Where(c => !HidBattery.IsBluetoothPath(c.Path) && !vendorsWithOwnProvider.Contains(c.VendorId))
+            .Where(c => !HidBattery.IsBluetoothPath(c.Path) && !vendorsWithOwnProvider.Contains(c.VendorId)
+                        && !productHasOwnProvider(c.VendorId, c.ProductId))
             .GroupBy(c => (c.VendorId, c.ProductId));
 
         foreach (var product in products)

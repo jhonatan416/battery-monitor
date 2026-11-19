@@ -23,11 +23,11 @@ internal static class Program
             new RazerBatteryProvider(),
             new LogitechBatteryProvider(),
             new PlayStationBatteryProvider(),
+            new HeadsetBatteryProvider(),
             new XInputBatteryProvider(() => bluetooth.LastPollSawGamepad),
-            new GenericHidBatteryProvider(new HashSet<ushort>
-            {
-                RazerBatteryProvider.VendorId, LogitechHidpp.VendorId, PlayStationProtocol.SonyVendorId,
-            }),
+            new GenericHidBatteryProvider(
+                new HashSet<ushort> { RazerBatteryProvider.VendorId, LogitechHidpp.VendorId, PlayStationProtocol.SonyVendorId },
+                (vid, pid) => Core.Protocols.Headsets.HeadsetCatalog.Find(vid, pid) is not null),
         ];
         var options = new MonitorOptions { LowThreshold = settings.Settings.LowBatteryThreshold };
         var monitor = new BatteryMonitorService(providers, TimeProvider.System, options);
