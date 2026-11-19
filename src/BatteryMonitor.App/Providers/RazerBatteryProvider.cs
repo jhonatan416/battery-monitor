@@ -8,7 +8,8 @@ namespace BatteryMonitor.App.Providers;
 /// <summary>Razer wireless mice (VID 1532) through their receiver's 90-byte feature report.</summary>
 public sealed class RazerBatteryProvider : IBatteryProvider
 {
-    private const ushort RazerVendorId = 0x1532;
+    public const ushort VendorId = 0x1532;
+    private const ushort RazerVendorId = VendorId;
     private readonly Dictionary<ushort, byte> _knownTransactionId = new();
 
     public string Name => "Razer";

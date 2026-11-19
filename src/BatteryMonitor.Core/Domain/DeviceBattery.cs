@@ -9,10 +9,12 @@ public enum DeviceKind { Other, Mouse, Headset, Keyboard, Gamepad }
 /// <param name="Connection">How it is connected, for example "Bluetooth" or "2.4 GHz receiver".</param>
 /// <param name="Percent">0..100, or null when the device answered without a level (asleep, off).</param>
 /// <param name="Charging">True while the device reports it is charging.</param>
+/// <param name="Approximate">True when the device only reports coarse levels (e.g. XInput empty/low/medium/full).</param>
 public sealed record DeviceBattery(
     string Id,
     string Name,
     DeviceKind Kind,
     string Connection,
     int? Percent,
-    bool Charging = false);
+    bool Charging = false,
+    bool Approximate = false);
