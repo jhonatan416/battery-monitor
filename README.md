@@ -21,6 +21,10 @@ specification but not yet tested on a real device of that kind.
 | Xbox controllers on a cable or the Xbox Wireless Adapter | XInput | Microsoft XInput battery API, 4 coarse levels shown as "about N %" | Unverified; skipped while a Bluetooth gamepad is shown, to avoid duplicates |
 | PlayStation DualShock 4 / DualSense (Edge) | USB or Bluetooth | Battery byte of the input report the controller sends | Unverified |
 | Logitech mice, keyboards, headsets (HID++ 2.0) | Unifying / Lightspeed / Bolt receiver, or USB | HID++ Unified Battery (`0x1004`) or Battery Status (`0x1000`); name and type from `0x0005` | Unverified; Bluetooth Logitech devices are covered by the Bluetooth row |
+| SteelSeries Arctis 1 / 7 / 9 / Pro Wireless / 7+ / Nova 3P / Nova 5 / Nova 7 / Nova Pro Wireless | USB receiver | Vendor status request per family (facts from the public HeadsetControl definitions) | Unverified |
+| HyperX Cloud II Wireless / Cloud Flight / Cloud Alpha Wireless / Cloud Alpha 2 Wireless | USB receiver | Vendor status request per family; Cloud Flight level estimated from voltage | Unverified |
+| Corsair Void (wireless family) / Virtuoso XT & SE / Void Wireless V2, Virtuoso MAX, HS80 MAX | USB receiver | Vendor status request; Virtuoso and V2 report tenths of a percent | Unverified |
+| Razer BlackShark V2 Pro (PlayStation) | USB dongle | Needs the dongle switched to another mode to read the headset | Not supported: breaks the read-only device rule |
 | Memzuiox mouse (`248A:8366` receiver) | 2.4 GHz receiver | None found: report 5 is static receiver data | Not supported |
 | kofire UG-06 headset (`4C4A:4155`) | USB dongle | Unknown | Not supported yet |
 
@@ -70,13 +74,14 @@ BatteryMonitor.Core   (no Windows dependencies, fully unit tested)
   Ports/        IBatteryProvider          <- one adapter per device family
   Protocols/    RazerProtocol, LogitechHidpp, PlayStationProtocol, HidBattery, XInputBattery,
                 BluetoothBattery, HidPath (pure decoding)
+  Protocols/Headsets/  HeadsetCatalog + SteelSeries, HyperX, Corsair query sequences over the IHidLink port
   Monitoring/   BatteryMonitorService     (merges providers, grace period, low-battery alerts)
   Settings/     AppSettings, SettingsSerializer (validation, never throws)
   Icons/        IconPixels (pixel-font layout), DevicePictures (device pixel art)
 
 BatteryMonitor.App    (Windows adapters + UI)
   Hid/          HID enumeration, feature reports, input/output stream, standard battery fields
-  Providers/    Bluetooth, Razer, Logitech, PlayStation, XInput, GenericHid (*BatteryProvider)
+  Providers/    Bluetooth, Razer, Logitech, PlayStation, Headset, XInput, GenericHid (*BatteryProvider)
   Settings/     SettingsStore (%APPDATA% file), StartupRegistration (HKCU Run key)
   Tray/         TrayApplicationContext, DeviceTrayIcon (two frames), BatteryIconRenderer
   Program.cs    composition root
