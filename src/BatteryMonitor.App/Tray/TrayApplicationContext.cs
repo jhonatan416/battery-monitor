@@ -1,28 +1,32 @@
-using BatteryMonitor.Core.Domain;
+using System.Diagnostics;
+using BatteryMonitor.App.Settings;
 using BatteryMonitor.Core.Monitoring;
+using BatteryMonitor.Core.Ports;
+using BatteryMonitor.Core.Settings;
 
 namespace BatteryMonitor.App.Tray;
 
 /// <summary>Owns the tray icons: one per device, refreshed on a timer from a background poll.</summary>
 internal sealed class TrayApplicationContext : ApplicationContext
 {
-    private static readonly TimeSpan Interval = TimeSpan.FromSeconds(60);
-
     private readonly BatteryMonitorService _monitor;
+    private readonly IStartupRegistration _startup = new StartupRegistration();
     private readonly Dictionary<string, NotifyIcon> _icons = new();
     private readonly NotifyIcon _placeholder;
     private readonly System.Windows.Forms.Timer _timer = new();
     private readonly SynchronizationContext _ui;
     private int _polling; // 0 = idle, 1 = a poll is running
 
-    public TrayApplicationContext(BatteryMonitorService monitor)
+    public TrayApplicationContext(BatteryMonitorService monitor, SettingsLoadResult settings)
     {
         _monitor = monitor;
         _ui = SynchronizationContext.Current ?? new WindowsFormsSynchronizationContext();
         _placeholder = NewIcon("Battery Monitor: looking for devices...", BatteryIconRenderer.Render(null, false, false));
         _placeholder.Visible = true;
+        if (settings.Warnings.Count > 0)
+            _placeholder.ShowBalloonTip(8000, "Battery Monitor settings", string.Join("\n", settings.Warnings), ToolTipIcon.Warning);
 
-        _timer.Interval = (int)Interval.TotalMilliseconds;
+        _timer.Interval = settings.Settings.PollIntervalSeconds * 1000;
         _timer.Tick += (_, _) => PollInBackground();
         _timer.Start();
         PollInBackground();
@@ -91,8 +95,29 @@ internal sealed class TrayApplicationContext : ApplicationContext
     {
         var menu = new ContextMenuStrip();
         menu.Items.Add("Refresh now", null, (_, _) => PollInBackground());
+        var startup = new ToolStripMenuItem("Start with Windows") { CheckOnClick = true };
+        startup.CheckedChanged += (_, _) => ToggleStartup(startup);
+        menu.Opening += (_, _) => startup.Checked = _startup.IsEnabled(); // reflect the real registry state
+        menu.Items.Add(startup);
+        menu.Items.Add("Open settings file (restart to apply)", null, (_, _) => OpenSettingsFile());
+        menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Exit", null, (_, _) => ExitThread());
         return new NotifyIcon { Text = text, Icon = icon, ContextMenuStrip = menu };
+    }
+
+    private void ToggleStartup(ToolStripMenuItem item)
+    {
+        var result = StartupToggle.Apply(_startup, item.Checked); // no write when the menu is only re-syncing
+        if (item.Checked != result.Enabled) item.Checked = result.Enabled;
+        if (result.Error is { } error)
+            MessageBox.Show($"Could not change the startup setting: {error}", "Battery Monitor");
+    }
+
+    private static void OpenSettingsFile()
+    {
+        // The file is created on first run; open it with the default editor for .json (or Notepad).
+        try { Process.Start(new ProcessStartInfo(SettingsStore.FilePath) { UseShellExecute = true }); }
+        catch (System.ComponentModel.Win32Exception) { Process.Start("notepad.exe", $"\"{SettingsStore.FilePath}\""); }
     }
 
     protected override void ExitThreadCore()

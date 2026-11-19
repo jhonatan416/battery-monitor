@@ -75,6 +75,19 @@ public class BatteryMonitorServiceTests
     }
 
     [Fact]
+    public void Device_without_level_on_first_poll_is_not_shown()
+    {
+        // A sleeping mouse can answer with no level before we ever read one: nothing to show yet.
+        _mice.Next = [Mouse(null)];
+        _pads.Next = [Pad(83)];
+
+        var snap = Service().Poll();
+
+        Assert.Equal("pad", Assert.Single(snap.Devices).Battery.Id);
+        Assert.Empty(snap.NewLowBattery);
+    }
+
+    [Fact]
     public void Low_battery_alert_fires_once_when_crossing_threshold()
     {
         var svc = Service();
