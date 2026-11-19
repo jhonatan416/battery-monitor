@@ -31,7 +31,9 @@ internal static class Program
             new XInputBatteryProvider(() => bluetooth.LastPollSawGamepad),
             new GenericHidBatteryProvider(vendorsWithOwnProvider, ProductHasOwnProvider),
             new HeadsetControlBatteryProvider(settings.Settings.HeadsetControlPath,
-                (vid, pid) => vendorsWithOwnProvider.Contains(vid) || ProductHasOwnProvider(vid, pid)),
+                // Only products another provider really reads: the Logitech HID++ provider covers Logitech
+                // headsets, but no provider reads Razer or Sony headsets (e.g. the BlackShark V2 Pro).
+                (vid, pid) => vid == LogitechHidpp.VendorId || ProductHasOwnProvider(vid, pid)),
         ];
         var options = new MonitorOptions { LowThreshold = settings.Settings.LowBatteryThreshold };
         var monitor = new BatteryMonitorService(providers, TimeProvider.System, options);
