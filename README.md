@@ -1,7 +1,12 @@
 # Battery Monitor
 
 A small Windows tray app that shows the battery level of wireless devices: one tray icon per device,
-with the percent drawn in the icon, a tooltip with details, and a notification when a device drops below 20 %.
+a tooltip with details, and a notification when a device drops below 20 %.
+
+Each icon switches every 3 seconds between a picture of the device (mouse, gamepad, headset,
+keyboard, or a battery for other devices) and the percent, drawn in a crisp pixel font. Both are
+colored by level: green above 50 %, yellow from 21 to 50 %, red at 20 % or less, blue while charging,
+gray when unknown, dimmed when the device stopped answering. `F` means full (100 %).
 
 ## Supported devices
 
@@ -41,6 +46,8 @@ Command-line options:
 
 - `--once`: poll one time, print every device found, and exit (no tray icon).
 - `--diag`: print each Razer HID collection and its raw reply to the battery request.
+- `--icons <folder>`: save sample tray icons (number and picture frames at 16 and 32 px) as PNG files,
+  plus `sheet.png` with all of them enlarged 8x on dark and light backgrounds, and exit.
 
 ## Architecture
 
@@ -53,12 +60,13 @@ BatteryMonitor.Core   (no Windows dependencies, fully unit tested)
   Protocols/    RazerProtocol (pure byte encoding/decoding)
   Monitoring/   BatteryMonitorService     (merges providers, grace period, low-battery alerts)
   Settings/     AppSettings, SettingsSerializer (validation, never throws)
+  Icons/        IconPixels (pixel-font layout), DevicePictures (device pixel art)
 
 BatteryMonitor.App    (Windows adapters + UI)
   Hid/          HID enumeration and feature reports (SetupAPI / hid.dll)
   Providers/    BluetoothBatteryProvider, RazerBatteryProvider
   Settings/     SettingsStore (%APPDATA% file), StartupRegistration (HKCU Run key)
-  Tray/         TrayApplicationContext, BatteryIconRenderer
+  Tray/         TrayApplicationContext, DeviceTrayIcon (two frames), BatteryIconRenderer
   Program.cs    composition root
 ```
 
