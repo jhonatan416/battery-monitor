@@ -22,9 +22,20 @@ public class SettingsSerializerTests
     public void Valid_file_is_read_case_insensitively()
     {
         var result = SettingsSerializer.Parse(
-            """{ "lowBatteryThreshold": 15, "POLLINTERVALSECONDS": 120, "genericMouseName": "My Mouse" }""");
+            """{ "lowBatteryThreshold": 15, "POLLINTERVALSECONDS": 120 }""");
 
-        Assert.Equal(new AppSettings { LowBatteryThreshold = 15, PollIntervalSeconds = 120, GenericMouseName = "My Mouse" }, result.Settings);
+        Assert.Equal(new AppSettings { LowBatteryThreshold = 15, PollIntervalSeconds = 120 }, result.Settings);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void Old_file_with_the_removed_mouse_name_still_loads_without_warnings()
+    {
+        // Files written before the Memzuiox removal (2026-11-19) still contain genericMouseName.
+        var result = SettingsSerializer.Parse(
+            """{ "lowBatteryThreshold": 20, "pollIntervalSeconds": 60, "genericMouseName": "Memzuiox Mouse" }""");
+
+        Assert.Equal(new AppSettings(), result.Settings);
         Assert.Empty(result.Warnings);
     }
 
@@ -91,18 +102,9 @@ public class SettingsSerializerTests
     }
 
     [Fact]
-    public void Blank_mouse_name_falls_back_to_default()
-    {
-        var result = SettingsSerializer.Parse("""{ "genericMouseName": "  " }""");
-
-        Assert.Equal(Defaults.GenericMouseName, result.Settings.GenericMouseName);
-        Assert.Contains(result.Warnings, w => w.Contains("genericMouseName"));
-    }
-
-    [Fact]
     public void Serialized_settings_parse_back_to_the_same_values()
     {
-        var custom = new AppSettings { LowBatteryThreshold = 25, PollIntervalSeconds = 300, GenericMouseName = "Office mouse" };
+        var custom = new AppSettings { LowBatteryThreshold = 25, PollIntervalSeconds = 300 };
 
         var result = SettingsSerializer.Parse(SettingsSerializer.Serialize(custom));
 
