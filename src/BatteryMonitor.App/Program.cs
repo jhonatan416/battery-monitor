@@ -4,6 +4,7 @@ using BatteryMonitor.App.Tray;
 using BatteryMonitor.Core.Domain;
 using BatteryMonitor.Core.Monitoring;
 using BatteryMonitor.Core.Ports;
+using BatteryMonitor.Core.Protocols;
 using BatteryMonitor.Core.Settings;
 
 namespace BatteryMonitor.App;
@@ -20,8 +21,13 @@ internal static class Program
         [
             bluetooth,
             new RazerBatteryProvider(),
+            new LogitechBatteryProvider(),
+            new PlayStationBatteryProvider(),
             new XInputBatteryProvider(() => bluetooth.LastPollSawGamepad),
-            new GenericHidBatteryProvider(new HashSet<ushort> { RazerBatteryProvider.VendorId }),
+            new GenericHidBatteryProvider(new HashSet<ushort>
+            {
+                RazerBatteryProvider.VendorId, LogitechHidpp.VendorId, PlayStationProtocol.SonyVendorId,
+            }),
         ];
         var options = new MonitorOptions { LowThreshold = settings.Settings.LowBatteryThreshold };
         var monitor = new BatteryMonitorService(providers, TimeProvider.System, options);
@@ -32,6 +38,9 @@ internal static class Program
         if (args.Contains("--diag")) { RazerBatteryProvider.Diagnose(Console.Out); return 0; }
         // `--diag-hid`: every HID collection with a standard battery field, Bluetooth ones included.
         if (args.Contains("--diag-hid")) { GenericHidBatteryProvider.Diagnose(Console.Out); return 0; }
+        // `--diag-input VID:PID`: raw input reports of every collection of one device (for adding devices).
+        int inputAt = Array.IndexOf(args, "--diag-input");
+        if (inputAt >= 0) return DumpInputReports(inputAt + 1 < args.Length ? args[inputAt + 1] : "");
         // `--icons <folder>`: save sample tray icons as PNG files, to check how they look.
         int iconsAt = Array.IndexOf(args, "--icons");
         if (iconsAt >= 0) return SaveSampleIcons(iconsAt + 1 < args.Length ? args[iconsAt + 1] : ".");
@@ -48,6 +57,35 @@ internal static class Program
     /// Saves sample icons at the common tray sizes, plus sheet.png: every sample enlarged 8x
     /// (nearest neighbour, so each pixel stays visible) on a dark and a light background.
     /// </summary>
+    private static int DumpInputReports(string vidPid)
+    {
+        string[] parts = vidPid.Split(':');
+        if (parts.Length != 2 || !ushort.TryParse(parts[0], System.Globalization.NumberStyles.HexNumber, null, out ushort vid)
+            || !ushort.TryParse(parts[1], System.Globalization.NumberStyles.HexNumber, null, out ushort pid))
+        {
+            Console.WriteLine("usage: --diag-input VID:PID   (hex, e.g. --diag-input 054C:0CE6)");
+            return 1;
+        }
+        var matches = Hid.HidCollection.Enumerate(vid).Where(c => c.ProductId == pid).ToList();
+        if (matches.Count == 0)
+        {
+            Console.WriteLine($"no HID collection with {vid:X4}:{pid:X4}; present HID paths:");
+            foreach (string path in Hid.Native.EnumerateHidInterfacePaths()) Console.WriteLine("   " + path);
+        }
+        foreach (var coll in matches)
+        {
+            Console.WriteLine(coll.Path);
+            using var stream = Hid.HidStream.Open(coll);
+            if (stream is null) { Console.WriteLine("   cannot open for input (exclusive or no input reports)"); continue; }
+            for (int i = 0; i < 3; i++)
+            {
+                var report = stream.Read(TimeSpan.FromMilliseconds(500));
+                Console.WriteLine(report is null ? "   no report within 500 ms" : "   " + Convert.ToHexString(report));
+            }
+        }
+        return 0;
+    }
+
     private static readonly DeviceKind[] Kinds =
         [DeviceKind.Mouse, DeviceKind.Gamepad, DeviceKind.Headset, DeviceKind.Keyboard, DeviceKind.Other, DeviceKind.Mouse];
 
