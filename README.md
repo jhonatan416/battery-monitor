@@ -24,6 +24,11 @@ specification but not yet tested on a real device of that kind.
 | SteelSeries Arctis 1 / 7 / 9 / Pro Wireless / 7+ / Nova 3P / Nova 5 / Nova 7 / Nova Pro Wireless | USB receiver | Vendor status request per family (facts from the public HeadsetControl definitions) | Unverified |
 | HyperX Cloud II Wireless / Cloud Flight / Cloud Alpha Wireless / Cloud Alpha 2 Wireless | USB receiver | Vendor status request per family; Cloud Flight level estimated from voltage | Unverified |
 | Corsair Void (wireless family) / Virtuoso XT & SE / Void Wireless V2, Virtuoso MAX, HS80 MAX | USB receiver | Vendor status request; Virtuoso and V2 report tenths of a percent | Unverified |
+| Steam Controller (original, wired or wireless dongle; 2026 model) | USB / Steam dongle | Battery event the controller sends by itself | Unverified |
+| 8BitDo Ultimate 3 / Ultimate 2 Wireless (firmware 1.03+) | USB / receiver | Battery byte of the input report | Unverified; other 8BitDo models need a mode request first and are not read |
+| Flydigi Apex / Apex 6 / Vader (V2) | USB receiver | One "get info" request | Unverified |
+| GameSir controllers | USB receiver | None: no public battery source | Not supported |
+| Any headset HeadsetControl supports | USB | The external [HeadsetControl](https://github.com/Sapd/HeadsetControl) tool, only when `headsetControlPath` is set | Optional, off by default |
 | Razer BlackShark V2 Pro (PlayStation) | USB dongle | Needs the dongle switched to another mode to read the headset | Not supported: breaks the read-only device rule |
 | Memzuiox mouse (`248A:8366` receiver) | 2.4 GHz receiver | None found: report 5 is static receiver data | Not supported |
 | kofire UG-06 headset (`4C4A:4155`) | USB dongle | Unknown | Not supported yet |
@@ -49,9 +54,14 @@ Tray menu (right-click any icon): **Refresh now**, **Start with Windows** (per-u
 |---|---|---|
 | `lowBatteryThreshold` | `20` | 1–99 (percent) |
 | `pollIntervalSeconds` | `60` | 15–3600 |
+| `headsetControlPath` | `""` (off) | HeadsetControl 3.0+ executable: a name on PATH (`"headsetcontrol"`) or a full path |
 
 An invalid value is ignored (its default is used) and reported in a tray notification, and by `--once`.
 Unknown settings (such as the old `genericMouseName`) are ignored silently.
+
+HeadsetControl is off by default because it reads every headset it supports, and for the Razer
+BlackShark V2 Pro that means switching its dongle mode, which this app never does itself. Headsets
+another provider already reads are not shown twice.
 
 Command-line options:
 
@@ -75,13 +85,15 @@ BatteryMonitor.Core   (no Windows dependencies, fully unit tested)
   Protocols/    RazerProtocol, LogitechHidpp, PlayStationProtocol, HidBattery, XInputBattery,
                 BluetoothBattery, HidPath (pure decoding)
   Protocols/Headsets/  HeadsetCatalog + SteelSeries, HyperX, Corsair query sequences over the IHidLink port
+  Protocols/Gamepads/  SteamController, EightBitDo, Flydigi (plus HeadsetControlOutput in Protocols/)
   Monitoring/   BatteryMonitorService     (merges providers, grace period, low-battery alerts)
   Settings/     AppSettings, SettingsSerializer (validation, never throws)
   Icons/        IconPixels (pixel-font layout), DevicePictures (device pixel art)
 
 BatteryMonitor.App    (Windows adapters + UI)
   Hid/          HID enumeration, feature reports, input/output stream, standard battery fields
-  Providers/    Bluetooth, Razer, Logitech, PlayStation, Headset, XInput, GenericHid (*BatteryProvider)
+  Providers/    Bluetooth, Razer, Logitech, PlayStation, Headset, Gamepad, XInput, GenericHid,
+                HeadsetControl (*BatteryProvider)
   Settings/     SettingsStore (%APPDATA% file), StartupRegistration (HKCU Run key)
   Tray/         TrayApplicationContext, DeviceTrayIcon (two frames), BatteryIconRenderer
   Program.cs    composition root
@@ -93,6 +105,8 @@ and registering it in `Program.cs`.
 ## Credits
 
 Protocol facts for Razer devices come from the public documentation of the
-[OpenRazer](https://github.com/openrazer/openrazer) project. The idea was inspired by
+[OpenRazer](https://github.com/openrazer/openrazer) project; headset facts from
+[HeadsetControl](https://github.com/Sapd/HeadsetControl); Steam Controller, 8BitDo and Flydigi facts
+from [SDL](https://github.com/libsdl-org/SDL) (zlib license). The idea was inspired by
 [Wireless-Device-Battery-Monitor](https://github.com/krisgfx9/Wireless-Device-Battery-Monitor).
 No code from either project is included.
