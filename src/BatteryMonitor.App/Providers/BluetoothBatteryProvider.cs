@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using BatteryMonitor.Core.Domain;
 using BatteryMonitor.Core.Ports;
+using BatteryMonitor.Core.Protocols;
 
 namespace BatteryMonitor.App.Providers;
 
@@ -21,7 +22,7 @@ public sealed class BluetoothBatteryProvider : IBatteryProvider
         foreach (string enumerator in new[] { "BTHLE", "BTHENUM" })
             foreach (var (instanceId, name, level) in Native.DevicesWithBattery(enumerator))
                 result.Add(new DeviceBattery($"bt:{instanceId}", name, GuessKind(name), "Bluetooth", level));
-        LastPollSawGamepad = result.Any(d => d.Kind == DeviceKind.Gamepad);
+        LastPollSawGamepad = result.Any(d => d.Kind == DeviceKind.Gamepad && d.Percent is not null); // connected only
         return result;
     }
 
@@ -47,8 +48,11 @@ public sealed class BluetoothBatteryProvider : IBatteryProvider
 
         private static readonly DEVPROPKEY BatteryKey = new() { fmtid = new Guid("104EA319-6EE2-4701-BD47-8DDBF425BBE5"), pid = 2 };
         private static readonly DEVPROPKEY FriendlyNameKey = new() { fmtid = new Guid("A45C254E-DF1C-4EFD-8020-67D146A850E0"), pid = 14 };
+        // "Connected" state of a paired Bluetooth device (DEVPROP_TYPE_BOOLEAN: 0x00 false, 0xFF true).
+        private static readonly DEVPROPKEY ConnectedKey = new() { fmtid = new Guid("83DA6326-97A6-4088-9453-A1923F573B29"), pid = 15 };
 
-        public static IEnumerable<(string InstanceId, string Name, int Level)> DevicesWithBattery(string enumerator)
+        /// <summary>Paired devices that have a battery property; Level is null while disconnected.</summary>
+        public static IEnumerable<(string InstanceId, string Name, int? Level)> DevicesWithBattery(string enumerator)
         {
             IntPtr set = SetupDiGetClassDevsW(IntPtr.Zero, enumerator, IntPtr.Zero, DIGCF_PRESENT | DIGCF_ALLCLASSES);
             if (set == new IntPtr(-1)) yield break;
@@ -61,9 +65,11 @@ public sealed class BluetoothBatteryProvider : IBatteryProvider
                     // Only the device node itself (BTHLE\DEV_..., BTHENUM\DEV_...), not its service children.
                     if (!id.StartsWith(enumerator + "\\DEV_", StringComparison.OrdinalIgnoreCase)) continue;
                     byte[]? battery = Property(set, ref info, BatteryKey);
-                    if (battery is not { Length: > 0 } || battery[0] > 100) continue;
+                    if (battery is not { Length: > 0 }) continue; // no battery (e.g. a speaker)
+                    byte[]? connected = Property(set, ref info, ConnectedKey);
+                    bool? isConnected = connected is { Length: > 0 } ? connected[0] != 0 : null;
                     string name = Utf16(Property(set, ref info, FriendlyNameKey)) ?? id;
-                    yield return (id, name, battery[0]);
+                    yield return (id, name, BluetoothBattery.Percent(battery[0], isConnected));
                 }
             }
             finally { SetupDiDestroyDeviceInfoList(set); }

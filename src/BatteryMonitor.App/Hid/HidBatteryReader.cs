@@ -13,6 +13,10 @@ public sealed record HidBatteryField(
 /// <summary>Reads standard HID battery fields. Read-only: only GET_FEATURE / GET_INPUT_REPORT requests.</summary>
 public static class HidBatteryReader
 {
+    /// <summary>Input and output report lengths (including the report id byte), or null if unreadable.</summary>
+    public static (int Input, int Output)? ReportLengths(HidCollection coll) =>
+        WithCaps(coll, (_, caps) => ((int, int)?)(caps.InputReportByteLength, caps.OutputReportByteLength));
+
     /// <summary>Top-level usage of the collection (page, usage), or null if it cannot be read.</summary>
     public static (ushort Page, ushort Usage)? TopLevelUsage(HidCollection coll) =>
         WithCaps(coll, (_, caps) => ((ushort, ushort)?)(caps.UsagePage, caps.Usage));
