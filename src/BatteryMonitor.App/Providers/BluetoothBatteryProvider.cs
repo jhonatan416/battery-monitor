@@ -12,12 +12,16 @@ public sealed class BluetoothBatteryProvider : IBatteryProvider
 {
     public string Name => "Bluetooth";
 
+    /// <summary>True when the latest poll reported a gamepad (used by XInput to avoid duplicates).</summary>
+    public bool LastPollSawGamepad { get; private set; }
+
     public IReadOnlyList<DeviceBattery> Poll()
     {
         var result = new List<DeviceBattery>();
         foreach (string enumerator in new[] { "BTHLE", "BTHENUM" })
             foreach (var (instanceId, name, level) in Native.DevicesWithBattery(enumerator))
                 result.Add(new DeviceBattery($"bt:{instanceId}", name, GuessKind(name), "Bluetooth", level));
+        LastPollSawGamepad = result.Any(d => d.Kind == DeviceKind.Gamepad);
         return result;
     }
 

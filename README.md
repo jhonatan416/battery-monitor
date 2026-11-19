@@ -10,10 +10,15 @@ gray when unknown, dimmed when the device stopped answering. `F` means full (100
 
 ## Supported devices
 
+"Verified" means tested on real hardware; "unverified" means implemented from the official
+specification but not yet tested on a real device of that kind.
+
 | Device | Connection | How the level is read | Status |
 |---|---|---|---|
-| Xbox Wireless Controller (and other Bluetooth devices) | Bluetooth | Windows Bluetooth battery property | Working |
-| Razer wireless mice (tested target: Viper V3 Pro SE, `1532:00DF`) | Razer receiver | Razer 90-byte feature report (class `07`, command `80`) | Working |
+| Xbox Wireless Controller (and other Bluetooth devices) | Bluetooth | Windows Bluetooth battery property | Verified |
+| Razer wireless mice (tested target: Viper V3 Pro SE, `1532:00DF`) | Razer receiver | Razer 90-byte feature report (class `07`, command `80`) | Verified |
+| Any USB/receiver device with a standard HID battery field, any brand | USB / receiver | HID Usage Tables: Battery Strength (`06:20`) or Battery System (`85:65`/`85:66`) | Unverified (descriptor parsing verified; no owned device has the field) |
+| Xbox controllers on a cable or the Xbox Wireless Adapter | XInput | Microsoft XInput battery API, 4 coarse levels shown as "about N %" | Unverified; skipped while a Bluetooth gamepad is shown, to avoid duplicates |
 | Memzuiox mouse (`248A:8366` receiver) | 2.4 GHz receiver | None found: report 5 is static receiver data | Not supported |
 | kofire UG-06 headset (`4C4A:4155`) | USB dongle | Unknown | Not supported yet |
 
@@ -46,6 +51,8 @@ Command-line options:
 
 - `--once`: poll one time, print every device found, and exit (no tray icon).
 - `--diag`: print each Razer HID collection and its raw reply to the battery request.
+- `--diag-hid`: print every HID collection that declares a standard battery field (Bluetooth ones
+  included) with the value read, plus how many collections and value fields were scanned.
 - `--icons <folder>`: save sample tray icons (number and picture frames at 16 and 32 px) as PNG files,
   plus `sheet.png` with all of them enlarged 8x on dark and light backgrounds, and exit.
 
@@ -57,14 +64,14 @@ Hexagonal (ports and adapters):
 BatteryMonitor.Core   (no Windows dependencies, fully unit tested)
   Domain/       DeviceBattery, DeviceKind
   Ports/        IBatteryProvider          <- one adapter per device family
-  Protocols/    RazerProtocol (pure byte encoding/decoding)
+  Protocols/    RazerProtocol, HidBattery, XInputBattery (pure decoding)
   Monitoring/   BatteryMonitorService     (merges providers, grace period, low-battery alerts)
   Settings/     AppSettings, SettingsSerializer (validation, never throws)
   Icons/        IconPixels (pixel-font layout), DevicePictures (device pixel art)
 
 BatteryMonitor.App    (Windows adapters + UI)
-  Hid/          HID enumeration and feature reports (SetupAPI / hid.dll)
-  Providers/    BluetoothBatteryProvider, RazerBatteryProvider
+  Hid/          HID enumeration, feature reports, standard battery fields (SetupAPI / hid.dll)
+  Providers/    BluetoothBatteryProvider, RazerBatteryProvider, XInputBatteryProvider, GenericHidBatteryProvider
   Settings/     SettingsStore (%APPDATA% file), StartupRegistration (HKCU Run key)
   Tray/         TrayApplicationContext, DeviceTrayIcon (two frames), BatteryIconRenderer
   Program.cs    composition root

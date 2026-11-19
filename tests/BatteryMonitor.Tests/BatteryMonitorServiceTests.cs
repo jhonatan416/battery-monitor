@@ -75,6 +75,14 @@ public class BatteryMonitorServiceTests
     }
 
     [Fact]
+    public void Approximate_flag_is_kept_on_the_reading()
+    {
+        _pads.Next = [Pad(65) with { Approximate = true }];
+
+        Assert.True(Assert.Single(Service().Poll().Devices).Battery.Approximate);
+    }
+
+    [Fact]
     public void Device_without_level_on_first_poll_is_not_shown()
     {
         // A sleeping mouse can answer with no level before we ever read one: nothing to show yet.

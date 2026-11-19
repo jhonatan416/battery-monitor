@@ -15,10 +15,13 @@ internal static class Program
     {
         // Composition root: the only place that knows every adapter.
         var settings = SettingsStore.Load();
-        IBatteryProvider[] providers =
+        var bluetooth = new BluetoothBatteryProvider();
+        IBatteryProvider[] providers = // order matters: Bluetooth runs first so XInput can avoid duplicates
         [
-            new BluetoothBatteryProvider(),
+            bluetooth,
             new RazerBatteryProvider(),
+            new XInputBatteryProvider(() => bluetooth.LastPollSawGamepad),
+            new GenericHidBatteryProvider(new HashSet<ushort> { RazerBatteryProvider.VendorId }),
         ];
         var options = new MonitorOptions { LowThreshold = settings.Settings.LowBatteryThreshold };
         var monitor = new BatteryMonitorService(providers, TimeProvider.System, options);
@@ -27,6 +30,8 @@ internal static class Program
         if (args.Contains("--once")) return PrintOnce(monitor, settings);
         // `--diag`: raw Razer protocol exchange, for troubleshooting new devices.
         if (args.Contains("--diag")) { RazerBatteryProvider.Diagnose(Console.Out); return 0; }
+        // `--diag-hid`: every HID collection with a standard battery field, Bluetooth ones included.
+        if (args.Contains("--diag-hid")) { GenericHidBatteryProvider.Diagnose(Console.Out); return 0; }
         // `--icons <folder>`: save sample tray icons as PNG files, to check how they look.
         int iconsAt = Array.IndexOf(args, "--icons");
         if (iconsAt >= 0) return SaveSampleIcons(iconsAt + 1 < args.Length ? args[iconsAt + 1] : ".");
@@ -86,7 +91,8 @@ internal static class Program
         foreach (var r in snap.Devices)
         {
             var b = r.Battery;
-            Console.WriteLine($"{b.Name,-28} {b.Kind,-8} {b.Connection,-18} {(b.Percent is int p ? $"{p}%" : "?"),5}{(b.Charging ? " charging" : "")}");
+            string level = b.Percent is int p ? $"{(b.Approximate ? "~" : "")}{p}%" : "?";
+            Console.WriteLine($"{b.Name,-28} {b.Kind,-8} {b.Connection,-18} {level,5}{(b.Charging ? " charging" : "")}");
         }
         foreach (var e in snap.ProviderErrors) Console.WriteLine($"error: {e}");
         foreach (var w in settings.Warnings) Console.WriteLine($"settings: {w}");

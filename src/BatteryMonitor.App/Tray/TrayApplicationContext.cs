@@ -94,7 +94,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     private static string Tooltip(DeviceReading r)
     {
         var b = r.Battery;
-        string level = b.Percent is int p ? $"{p}%" : "unknown";
+        string level = b.Percent is int p ? $"{(b.Approximate ? "about " : "")}{p}%" : "unknown";
         string state = b.Charging ? " (charging)" : r.Stale ? $" (last seen {r.LastSeen.ToLocalTime():HH:mm})" : "";
         return Truncate($"{b.Name}: {level}{state}\n{b.Connection}");
     }
