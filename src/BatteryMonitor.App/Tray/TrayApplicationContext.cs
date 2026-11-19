@@ -6,14 +6,21 @@ using BatteryMonitor.Core.Settings;
 
 namespace BatteryMonitor.App.Tray;
 
-/// <summary>Owns the tray icons: one per device, refreshed on a timer from a background poll.</summary>
+/// <summary>
+/// Owns the tray icons: one per device, refreshed on a timer from a background poll.
+/// Each icon alternates between the device picture and the percent every few seconds.
+/// </summary>
 internal sealed class TrayApplicationContext : ApplicationContext
 {
+    private const int FrameSwitchMs = 3000;
+
     private readonly BatteryMonitorService _monitor;
     private readonly IStartupRegistration _startup = new StartupRegistration();
-    private readonly Dictionary<string, NotifyIcon> _icons = new();
+    private readonly Dictionary<string, DeviceTrayIcon> _icons = new();
     private readonly NotifyIcon _placeholder;
     private readonly System.Windows.Forms.Timer _timer = new();
+    private readonly System.Windows.Forms.Timer _frameTimer = new() { Interval = FrameSwitchMs };
+    private bool _showPicture = true; // start with the picture so a new icon is recognisable at once
     private readonly SynchronizationContext _ui;
     private int _polling; // 0 = idle, 1 = a poll is running
 
@@ -29,7 +36,15 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _timer.Interval = settings.Settings.PollIntervalSeconds * 1000;
         _timer.Tick += (_, _) => PollInBackground();
         _timer.Start();
+        _frameTimer.Tick += (_, _) => SwitchFrames();
+        _frameTimer.Start();
         PollInBackground();
+    }
+
+    private void SwitchFrames()
+    {
+        _showPicture = !_showPicture;
+        foreach (var icon in _icons.Values) icon.Show(_showPicture);
     }
 
     private void PollInBackground()
@@ -54,19 +69,15 @@ internal sealed class TrayApplicationContext : ApplicationContext
             seen.Add(b.Id);
             if (!_icons.TryGetValue(b.Id, out var icon))
             {
-                icon = NewIcon("", null);
+                icon = new DeviceTrayIcon(NewIcon("", null));
+                icon.Show(_showPicture);
                 _icons[b.Id] = icon;
             }
-            var old = icon.Icon;
-            icon.Icon = BatteryIconRenderer.Render(b.Percent, b.Charging, reading.Stale);
-            old?.Dispose();
-            icon.Text = Tooltip(reading);
-            icon.Visible = true;
+            icon.Update(reading, Tooltip(reading));
         }
 
         foreach (var id in _icons.Keys.Where(id => !seen.Contains(id)).ToList())
         {
-            _icons[id].Visible = false;
             _icons[id].Dispose();
             _icons.Remove(id);
         }
@@ -77,7 +88,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         foreach (var low in snap.NewLowBattery)
             if (_icons.TryGetValue(low.Id, out var icon))
-                icon.ShowBalloonTip(5000, "Low battery", $"{low.Name} is at {low.Percent}%", ToolTipIcon.Warning);
+                icon.Notify.ShowBalloonTip(5000, "Low battery", $"{low.Name} is at {low.Percent}%", ToolTipIcon.Warning);
     }
 
     private static string Tooltip(DeviceReading r)
@@ -123,7 +134,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
     protected override void ExitThreadCore()
     {
         _timer.Stop();
-        foreach (var icon in _icons.Values) { icon.Visible = false; icon.Dispose(); }
+        _frameTimer.Stop();
+        foreach (var icon in _icons.Values) icon.Dispose();
         _placeholder.Visible = false;
         _placeholder.Dispose();
         base.ExitThreadCore();

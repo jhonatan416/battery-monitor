@@ -1,45 +1,54 @@
-using System.Drawing.Drawing2D;
-using System.Drawing.Text;
 using System.Runtime.InteropServices;
+using BatteryMonitor.Core.Domain;
+using BatteryMonitor.Core.Icons;
 
 namespace BatteryMonitor.App.Tray;
 
-/// <summary>Draws a small tray icon showing the percent number, colored by level.</summary>
+/// <summary>
+/// Draws the two tray frames of a device: the percent as a crisp pixel font, and the device picture.
+/// Layout lives in <see cref="IconPixels"/>; both frames are colored by level, with a dark outline
+/// so they read on light and dark taskbars.
+/// </summary>
 internal static class BatteryIconRenderer
 {
-    public static Icon Render(int? percent, bool charging, bool stale)
+    private static readonly Color OutlineColor = Color.FromArgb(230, 16, 16, 16);
+
+    private static int TraySize => SystemInformation.SmallIconSize.Width; // 16 at 100 % scaling
+
+    public static Icon Render(int? percent, bool charging, bool stale) => Render(percent, charging, stale, TraySize);
+
+    public static Icon Render(int? percent, bool charging, bool stale, int size) =>
+        Paint(IconPixels.Build(percent, size), LevelColor(percent, charging, stale));
+
+    public static Icon RenderPicture(DeviceKind kind, int? percent, bool charging, bool stale) =>
+        RenderPicture(kind, percent, charging, stale, TraySize);
+
+    public static Icon RenderPicture(DeviceKind kind, int? percent, bool charging, bool stale, int size) =>
+        Paint(IconPixels.BuildPicture(kind, size), LevelColor(percent, charging, stale));
+
+    private static Color LevelColor(int? percent, bool charging, bool stale)
     {
-        int size = SystemInformation.SmallIconSize.Width; // 16 at 100 % scaling, larger on HiDPI
-        using var bmp = new Bitmap(size, size);
-        using (var g = Graphics.FromImage(bmp))
+        Color fill = percent switch
         {
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
-            g.Clear(Color.Transparent);
+            null => Color.FromArgb(170, 170, 170),
+            _ when charging => Color.FromArgb(0, 190, 255),
+            <= 20 => Color.FromArgb(255, 70, 50),
+            <= 50 => Color.FromArgb(255, 210, 0),
+            _ => Color.FromArgb(60, 220, 60),
+        };
+        return stale ? Color.FromArgb(140, fill) : fill; // remembered value: dimmed
+    }
 
-            Color color = percent switch
+    private static Icon Paint(IconPixel[,] grid, Color fill)
+    {
+        int size = grid.GetLength(0);
+        using var bmp = new Bitmap(size, size);
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
             {
-                null => Color.Gray,
-                _ when charging => Color.DeepSkyBlue,
-                <= 20 => Color.OrangeRed,
-                <= 50 => Color.Gold,
-                _ => Color.LimeGreen,
-            };
-            if (stale) color = Color.FromArgb(150, color);
-
-            string text = percent switch { null => "?", 100 => "F", _ => percent.Value.ToString() };
-            using var font = new Font("Segoe UI", size * (text.Length > 1 ? 0.56f : 0.7f), FontStyle.Bold, GraphicsUnit.Pixel);
-            using var brush = new SolidBrush(color);
-            var fmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
-            g.DrawString(text, font, brush, new RectangleF(-1, 0, size + 2, size), fmt);
-
-            // Bottom bar: fill proportional to the level.
-            if (percent is int p)
-            {
-                int w = Math.Max(1, (size - 2) * p / 100);
-                g.FillRectangle(brush, 1, size - 2, w, 2);
+                if (grid[y, x] == IconPixel.Fill) bmp.SetPixel(x, y, fill);
+                else if (grid[y, x] == IconPixel.Outline) bmp.SetPixel(x, y, OutlineColor);
             }
-        }
 
         IntPtr hIcon = bmp.GetHicon();
         try { return (Icon)Icon.FromHandle(hIcon).Clone(); }
