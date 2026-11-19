@@ -104,11 +104,48 @@ public class SettingsSerializerTests
     [Fact]
     public void Serialized_settings_parse_back_to_the_same_values()
     {
-        var custom = new AppSettings { LowBatteryThreshold = 25, PollIntervalSeconds = 300 };
+        var custom = new AppSettings { LowBatteryThreshold = 25, PollIntervalSeconds = 300, HeadsetControlPath = @"C:\Tools\headsetcontrol.exe" };
 
         var result = SettingsSerializer.Parse(SettingsSerializer.Serialize(custom));
 
         Assert.Equal(custom, result.Settings);
         Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void HeadsetControl_is_off_by_default()
+    {
+        Assert.Equal("", Defaults.HeadsetControlPath);
+    }
+
+    [Fact]
+    public void HeadsetControl_path_is_read_and_trimmed()
+    {
+        var result = SettingsSerializer.Parse("""{ "headsetControlPath": "  headsetcontrol  " }""");
+
+        Assert.Equal("headsetcontrol", result.Settings.HeadsetControlPath);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Theory]
+    [InlineData("42")]
+    [InlineData("true")]
+    [InlineData("null")]
+    public void HeadsetControl_path_that_is_not_text_is_ignored_with_a_warning(string value)
+    {
+        var result = SettingsSerializer.Parse($$"""{ "headsetControlPath": {{value}} }""");
+
+        Assert.Equal("", result.Settings.HeadsetControlPath);
+        Assert.Contains("headsetControlPath", Assert.Single(result.Warnings));
+    }
+
+    [Fact]
+    public void Existing_numeric_settings_are_unchanged_by_the_new_path_setting()
+    {
+        var result = SettingsSerializer.Parse("""{ "lowBatteryThreshold": 0, "headsetControlPath": "hc" }""");
+
+        Assert.Equal(Defaults.LowBatteryThreshold, result.Settings.LowBatteryThreshold);
+        Assert.Equal("hc", result.Settings.HeadsetControlPath);
+        Assert.Single(result.Warnings);
     }
 }

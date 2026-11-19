@@ -38,8 +38,17 @@ public static class SettingsSerializer
                 AppSettings.MinThreshold, AppSettings.MaxThreshold, warnings),
             PollIntervalSeconds = ReadInt(root, "pollIntervalSeconds", defaults.PollIntervalSeconds,
                 AppSettings.MinPollSeconds, AppSettings.MaxPollSeconds, warnings),
+            HeadsetControlPath = ReadText(root, "headsetControlPath", defaults.HeadsetControlPath, warnings),
         };
         return new SettingsLoadResult(settings, warnings);
+    }
+
+    private static string ReadText(JsonElement root, string name, string fallback, List<string> warnings)
+    {
+        if (!TryGet(root, name, out var value)) return fallback;
+        if (value.ValueKind == JsonValueKind.String) return value.GetString()!.Trim(); // non-null: kind is String
+        warnings.Add($"{name} must be text (a file name or path); using \"{fallback}\".");
+        return fallback;
     }
 
     private static int ReadInt(JsonElement root, string name, int fallback, int min, int max, List<string> warnings)
