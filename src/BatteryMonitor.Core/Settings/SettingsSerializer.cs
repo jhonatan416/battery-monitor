@@ -38,7 +38,6 @@ public static class SettingsSerializer
                 AppSettings.MinThreshold, AppSettings.MaxThreshold, warnings),
             PollIntervalSeconds = ReadInt(root, "pollIntervalSeconds", defaults.PollIntervalSeconds,
                 AppSettings.MinPollSeconds, AppSettings.MaxPollSeconds, warnings),
-            GenericMouseName = ReadName(root, "genericMouseName", defaults.GenericMouseName, warnings),
         };
         return new SettingsLoadResult(settings, warnings);
     }
@@ -48,15 +47,6 @@ public static class SettingsSerializer
         if (!TryGet(root, name, out var value)) return fallback;
         if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int n) && n >= min && n <= max) return n;
         warnings.Add($"{name} must be a whole number from {min} to {max}; using {fallback}.");
-        return fallback;
-    }
-
-    private static string ReadName(JsonElement root, string name, string fallback, List<string> warnings)
-    {
-        if (!TryGet(root, name, out var value)) return fallback;
-        if (value.ValueKind == JsonValueKind.String && value.GetString() is { } text && !string.IsNullOrWhiteSpace(text))
-            return text.Trim();
-        warnings.Add($"{name} must be a non-empty text; using \"{fallback}\".");
         return fallback;
     }
 

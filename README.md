@@ -9,7 +9,7 @@ with the percent drawn in the icon, a tooltip with details, and a notification w
 |---|---|---|---|
 | Xbox Wireless Controller (and other Bluetooth devices) | Bluetooth | Windows Bluetooth battery property | Working |
 | Razer wireless mice (tested target: Viper V3 Pro SE, `1532:00DF`) | Razer receiver | Razer 90-byte feature report (class `07`, command `80`) | Working |
-| Memzuiox mouse (`248A:8366` receiver) | 2.4 GHz receiver | Feature report 5, byte 1 | Working; byte meaning still being confirmed |
+| Memzuiox mouse (`248A:8366` receiver) | 2.4 GHz receiver | None found: report 5 is static receiver data | Not supported |
 | kofire UG-06 headset (`4C4A:4155`) | USB dongle | Unknown | Not supported yet |
 
 ## Build and run
@@ -33,9 +33,9 @@ Tray menu (right-click any icon): **Refresh now**, **Start with Windows** (per-u
 |---|---|---|
 | `lowBatteryThreshold` | `20` | 1–99 (percent) |
 | `pollIntervalSeconds` | `60` | 15–3600 |
-| `genericMouseName` | `"Memzuiox Mouse"` | any non-empty text |
 
 An invalid value is ignored (its default is used) and reported in a tray notification, and by `--once`.
+Unknown settings (such as the old `genericMouseName`) are ignored silently.
 
 Command-line options:
 
@@ -50,13 +50,13 @@ Hexagonal (ports and adapters):
 BatteryMonitor.Core   (no Windows dependencies, fully unit tested)
   Domain/       DeviceBattery, DeviceKind
   Ports/        IBatteryProvider          <- one adapter per device family
-  Protocols/    RazerProtocol, GenericMouseProtocol (pure byte encoding/decoding)
+  Protocols/    RazerProtocol (pure byte encoding/decoding)
   Monitoring/   BatteryMonitorService     (merges providers, grace period, low-battery alerts)
   Settings/     AppSettings, SettingsSerializer (validation, never throws)
 
 BatteryMonitor.App    (Windows adapters + UI)
   Hid/          HID enumeration and feature reports (SetupAPI / hid.dll)
-  Providers/    BluetoothBatteryProvider, RazerBatteryProvider, GenericMouseBatteryProvider
+  Providers/    BluetoothBatteryProvider, RazerBatteryProvider
   Settings/     SettingsStore (%APPDATA% file), StartupRegistration (HKCU Run key)
   Tray/         TrayApplicationContext, BatteryIconRenderer
   Program.cs    composition root

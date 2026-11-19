@@ -11,7 +11,4 @@ public sealed record AppSettings
 
     /// <summary>Seconds between polls (15..3600).</summary>
     public int PollIntervalSeconds { get; init; } = 60;
-
-    /// <summary>Display name for the generic 248A:8366 receiver mouse (the receiver reports no name).</summary>
-    public string GenericMouseName { get; init; } = "Memzuiox Mouse";
 }

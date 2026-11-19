@@ -18,7 +18,6 @@ internal static class Program
         [
             new BluetoothBatteryProvider(),
             new RazerBatteryProvider(),
-            new GenericMouseBatteryProvider(settings.Settings.GenericMouseName),
         ];
         var options = new MonitorOptions { LowThreshold = settings.Settings.LowBatteryThreshold };
         var monitor = new BatteryMonitorService(providers, TimeProvider.System, options);
