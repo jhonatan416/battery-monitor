@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
+using BatteryMonitor.Core.Protocols;
 using Microsoft.Win32.SafeHandles;
 
 namespace BatteryMonitor.App.Hid;
@@ -8,19 +8,13 @@ namespace BatteryMonitor.App.Hid;
 /// <summary>One HID top-level collection (a "\\?\hid#vid_xxxx&amp;pid_xxxx..." interface).</summary>
 public sealed partial record HidCollection(string Path, ushort VendorId, ushort ProductId)
 {
-    [GeneratedRegex(@"vid_([0-9a-f]{4})&pid_([0-9a-f]{4})", RegexOptions.IgnoreCase)]
-    private static partial Regex VidPid();
-
-    /// <summary>Lists every present HID collection, optionally filtered by vendor id.</summary>
+    /// <summary>Lists every present HID collection (USB and Bluetooth), optionally filtered by vendor id.</summary>
     public static IReadOnlyList<HidCollection> Enumerate(ushort? vendorId = null)
     {
         var result = new List<HidCollection>();
         foreach (string path in Native.EnumerateHidInterfacePaths())
         {
-            var m = VidPid().Match(path);
-            if (!m.Success) continue;
-            ushort vid = Convert.ToUInt16(m.Groups[1].Value, 16);
-            ushort pid = Convert.ToUInt16(m.Groups[2].Value, 16);
+            if (HidPath.TryParseIds(path) is not var (vid, pid)) continue;
             if (vendorId is null || vendorId == vid) result.Add(new HidCollection(path, vid, pid));
         }
         return result;
