@@ -28,6 +28,7 @@ internal static class Program
             new PlayStationBatteryProvider(),
             new HeadsetBatteryProvider(),
             new GamepadBatteryProvider(),
+            new AppleAudioBatteryProvider(() => bluetooth.LastPollConnectedNames, () => bluetooth.LastPollNamesWithLevel),
             new XInputBatteryProvider(() => bluetooth.LastPollSawGamepad),
             new GenericHidBatteryProvider(vendorsWithOwnProvider, ProductHasOwnProvider),
             new HeadsetControlBatteryProvider(settings.Settings.HeadsetControlPath,

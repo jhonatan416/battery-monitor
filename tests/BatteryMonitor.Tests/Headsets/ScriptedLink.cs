@@ -33,6 +33,25 @@ internal sealed class ScriptedLink : IHidLink
         return null;
     }
 
+    private readonly Queue<byte[]> _unsolicited = new();
+
+    /// <summary>Input reports the device sends without being asked (returned by Listen).</summary>
+    public ScriptedLink Unsolicited(params byte[][] reports)
+    {
+        foreach (var r in reports) _unsolicited.Enqueue(r);
+        return this;
+    }
+
+    public byte[]? Listen(Func<byte[], bool> isReport)
+    {
+        while (_unsolicited.Count > 0)
+        {
+            var r = _unsolicited.Dequeue();
+            if (isReport(r)) return r;
+        }
+        return null;
+    }
+
     public void Drain() { }
 
     /// <summary>A reply of <paramref name="length"/> bytes with the given values at the given offsets.</summary>

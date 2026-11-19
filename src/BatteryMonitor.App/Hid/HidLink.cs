@@ -11,6 +11,7 @@ public sealed class HidLink(HidStream stream) : IHidLink
 {
     private static readonly TimeSpan ReplyTimeout = TimeSpan.FromMilliseconds(400);
     private static readonly TimeSpan DrainTimeout = TimeSpan.FromMilliseconds(5);
+    private static readonly TimeSpan ListenFor = TimeSpan.FromSeconds(2);
     private const int MaxReportsPerExchange = 8, MaxDrained = 32;
 
     public byte[]? Exchange(byte[] request, Func<byte[], bool>? isReply = null)
@@ -21,6 +22,18 @@ public sealed class HidLink(HidStream stream) : IHidLink
             if (stream.Read(ReplyTimeout) is not { } raw) return null;
             byte[] report = raw.Length > 0 && raw[0] == 0x00 ? raw[1..] : raw;
             if (isReply is null || isReply(report)) return report;
+        }
+        return null;
+    }
+
+    public byte[]? Listen(Func<byte[], bool> isReport)
+    {
+        var until = DateTime.UtcNow + ListenFor;
+        while (DateTime.UtcNow < until)
+        {
+            if (stream.Read(ReplyTimeout) is not { } raw) continue; // quiet for a moment; keep waiting
+            byte[] report = raw.Length > 0 && raw[0] == 0x00 ? raw[1..] : raw;
+            if (isReport(report)) return report;
         }
         return null;
     }

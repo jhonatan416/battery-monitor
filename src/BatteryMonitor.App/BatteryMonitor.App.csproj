@@ -6,7 +6,11 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- Windows 10 2004 SDK projection: Bluetooth LE advertisement watcher (AirPods / Beats). -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <!-- Keep the exe where it was before the SDK version was added: the "Start with Windows" entry and docs point there. -->
+    <OutputPath>bin\$(Configuration)\net10.0-windows\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
