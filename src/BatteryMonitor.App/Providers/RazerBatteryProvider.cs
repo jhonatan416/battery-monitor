@@ -116,7 +116,8 @@ public sealed class RazerBatteryProvider : IBatteryProvider
     private static DeviceBattery Device(HidCollection coll, int? percent, bool charging)
     {
         string name = Clean(coll.ProductName()) ?? $"Razer {coll.ProductId:X4}";
-        return new DeviceBattery($"razer:{coll.ProductId:X4}", name, DeviceKind.Mouse, "Razer receiver", percent, charging);
+        return new DeviceBattery($"razer:{coll.ProductId:X4}", name, DeviceKind.Mouse, "Razer receiver", percent, charging,
+            Usb: new UsbProduct(coll.VendorId, coll.ProductId));
     }
 
     private static string? Clean(string? name)

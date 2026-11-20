@@ -43,7 +43,8 @@ public sealed class GenericHidBatteryProvider(
                         ?? $"USB device {coll.VendorId:X4}:{coll.ProductId:X4}",
                     KindOf(collections),
                     "USB / receiver",
-                    percent);
+                    percent,
+                    Usb: new UsbProduct(coll.VendorId, coll.ProductId));
             }
         return null;
     }

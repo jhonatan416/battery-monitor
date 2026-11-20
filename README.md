@@ -75,8 +75,9 @@ An invalid value is ignored (its default is used) and reported in a tray notific
 Unknown settings (such as the old `genericMouseName`) are ignored silently.
 
 HeadsetControl is off by default because it reads every headset it supports, and for the Razer
-BlackShark V2 Pro that means switching its dongle mode, which this app never does itself. Headsets
-another provider already reads are not shown twice.
+BlackShark V2 Pro that means switching its dongle mode, which this app never does itself. A headset
+another provider read in the last 2 minutes is not shown twice; any other one (an unknown model, or
+firmware our own code cannot read) is shown from HeadsetControl.
 
 Command-line options:
 

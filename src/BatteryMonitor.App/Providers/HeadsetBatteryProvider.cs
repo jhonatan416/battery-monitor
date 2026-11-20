@@ -29,7 +29,7 @@ public sealed class HeadsetBatteryProvider(string name, string idPrefix, IReadOn
                 if (specs.FirstOrDefault(s => s.VendorId == vendor && s.ProductIds.Contains(product.Key)) is not { } spec) continue;
                 if (Read(spec, product.Key, product) is not { } status) continue;
                 result.Add(new DeviceBattery($"{idPrefix}:{vendor:X4}{product.Key:X4}", spec.Name, spec.Kind,
-                    "USB receiver", status.Percent, status.Charging));
+                    "USB receiver", status.Percent, status.Charging, Usb: new UsbProduct(vendor, product.Key)));
             }
         return result;
     }

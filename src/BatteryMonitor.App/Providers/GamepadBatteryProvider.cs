@@ -40,7 +40,7 @@ public sealed class GamepadBatteryProvider : IBatteryProvider
                 if (vendor != SteamController.VendorId && result.Any(d => d.Id.StartsWith(ProductKey(coll)))) continue;
                 if (Read(vendor, coll) is not { } status) continue;
                 result.Add(new DeviceBattery($"{ProductKey(coll)}:{coll.Path.GetHashCode():X8}", name, DeviceKind.Gamepad,
-                    "USB / receiver", status.Percent, status.Charging));
+                    "USB / receiver", status.Percent, status.Charging, Usb: new UsbProduct(coll.VendorId, coll.ProductId)));
             }
         return result;
     }
