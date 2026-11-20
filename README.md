@@ -34,6 +34,10 @@ specification but not yet tested on a real device of that kind.
 | Flydigi Apex / Apex 6 / Vader (V2) | USB receiver | One "get info" request | Unverified |
 | GameSir controllers | USB receiver | None: no public battery source | Not supported |
 | Any headset HeadsetControl supports | USB | The external [HeadsetControl](https://github.com/Sapd/HeadsetControl) tool, only when `headsetControlPath` is set | Optional, off by default |
+| Logitech PRO X 2 LIGHTSPEED | USB receiver | One battery "get" request (the one older firmware answers) | Unverified; newer firmware uses Logitech's "Centurion" protocol, not implemented yet |
+| ASTRO A50 (Gen 4 on PC mode, Gen 5) | Base station | One battery "get" request; Gen 4 first checks that the headset is linked (the base keeps the last level after it turns off) | Unverified |
+| MCHOSE X9 Wireless / V9 Pro | USB dongle | One battery query | Unverified |
+| Logitech G435 | USB dongle | — | Not supported: no public read-only battery command |
 | SteelSeries Aerox 3 / 5 / 9 Wireless, Prime Wireless, Prime Mini Wireless, Rival 3 Wireless (+ Gen 2), Rival 650 Wireless | USB receiver or cable | One battery "get" request (facts from rivalcfg) | Unverified |
 | HyperX Pulsefire Dart | USB receiver or cable | One "heartbeat" request | Unverified; other HyperX mice have no public source |
 | Pulsar, Kysona M600, VXE Dragonfly R1 Pro / MAD R, ATK VXE R1 SE | USB dongle or cable | One "power" request (shared protocol of these brands) | Unverified |
@@ -95,7 +99,8 @@ BatteryMonitor.Core   (no Windows dependencies, fully unit tested)
   Ports/        IBatteryProvider          <- one adapter per device family
   Protocols/    RazerProtocol, LogitechHidpp, PlayStationProtocol, HidBattery, XInputBattery,
                 BluetoothBattery, HidPath (pure decoding)
-  Protocols/Headsets/  HeadsetCatalog + SteelSeries, HyperX, Corsair, Sony INZONE, Jabra query sequences over the IHidLink port
+  Protocols/Headsets/  HeadsetCatalog + SteelSeries, HyperX, Corsair, Sony INZONE, Jabra, Logitech/ASTRO, MCHOSE
+                       query sequences over the IHidLink port
   Protocols/Gamepads/  SteamController, EightBitDo, Flydigi (plus HeadsetControlOutput in Protocols/)
   Protocols/Mice/      MiceCatalog: SteelSeries, HyperX, ATK (Pulsar/VXE/Kysona), Glorious query sequences
   Monitoring/   BatteryMonitorService     (merges providers, grace period, low-battery alerts)

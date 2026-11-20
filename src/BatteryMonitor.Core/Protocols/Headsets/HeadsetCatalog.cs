@@ -9,7 +9,7 @@ public static class HeadsetCatalog
 {
     public static IReadOnlyList<HeadsetSpec> All { get; } =
         [.. SteelSeriesHeadsets.Specs, .. HyperXHeadsets.Specs, .. CorsairHeadsets.Specs, .. SonyInzoneHeadsets.Specs,
-         .. JabraHeadsets.Specs];
+         .. JabraHeadsets.Specs, .. LogitechHeadsets.Specs, .. MchoseHeadsets.Specs];
 
     public static IReadOnlySet<ushort> VendorIds { get; } = All.Select(s => s.VendorId).ToHashSet();
 
