@@ -49,6 +49,17 @@ specification but not yet tested on a real device of that kind.
 | Memzuiox mouse (`248A:8366` receiver) | 2.4 GHz receiver | None found: report 5 is static receiver data | Not supported |
 | kofire UG-06 headset (`4C4A:4155`) | USB dongle | Unknown | Not supported yet |
 
+## Download
+
+Get `BatteryMonitor-<version>-win-x64-portable.zip` from the
+[Releases](../../releases) page, unzip it anywhere and run `BatteryMonitor.exe`. It needs Windows 10
+2004 or later (x64) and nothing else: .NET is included in the exe. The icons appear in the
+taskbar's hidden-icons area; right-click one for the menu. The exe is not code-signed, so Windows
+SmartScreen may warn the first time ("More info" > "Run anyway").
+
+To keep it running at sign-in, turn on **Start with Windows** in the tray menu after placing the exe
+where it will stay (the entry points to that location).
+
 ## Build and run
 
 Requires the .NET 10 SDK on Windows 10 2004 (build 19041) or later.
@@ -120,6 +131,15 @@ BatteryMonitor.App    (Windows adapters + UI)
 
 Adding a device means adding one `IBatteryProvider` (plus its protocol decoder and tests in Core)
 and registering it in `Program.cs`.
+
+## Releases
+
+Pushing a version tag (`git tag v1.0.0 && git push origin v1.0.0`) runs `.github/workflows/release.yml`:
+tests, a self-contained single-file publish, and a GitHub Release with the portable zip.
+
+## License
+
+[MIT](LICENSE).
 
 ## Credits
 
