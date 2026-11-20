@@ -27,10 +27,13 @@ jobs:
       - name: Publish
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop' # any failing cmdlet fails the step (never zip a partial build)
           $version = "${{ github.ref_name }}".TrimStart('v')
           dotnet publish src/BatteryMonitor.App -c Release -r win-x64 --self-contained true `
             -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
             -p:EnableCompressionInSingleFile=true -p:DebugType=none -p:Version=$version -o publish
+          if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE" }
+          if (-not (Test-Path publish/BatteryMonitor.App.exe)) { throw "publish/BatteryMonitor.App.exe was not produced" }
           Rename-Item publish/BatteryMonitor.App.exe BatteryMonitor.exe
           Copy-Item README.md, LICENSE publish/
           Compress-Archive publish/* "BatteryMonitor-$version-win-x64-portable.zip"
