@@ -102,7 +102,7 @@ public static class GloriousMice
 public static class MiceCatalog
 {
     public static IReadOnlyList<HeadsetSpec> All { get; } =
-        [.. SteelSeriesMice.Specs, .. HyperXMice.Specs, .. AtkMice.Specs, .. GloriousMice.Specs];
+        [.. SteelSeriesMice.Specs, .. HyperXMice.Specs, .. AtkMice.Specs, .. GloriousMice.Specs, .. CorsairMice.Specs];
 
     public static IReadOnlySet<ushort> VendorIds { get; } = All.Select(s => s.VendorId).ToHashSet();
 

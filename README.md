@@ -42,7 +42,7 @@ specification but not yet tested on a real device of that kind.
 | HyperX Pulsefire Dart | USB receiver or cable | One "heartbeat" request | Unverified; other HyperX mice have no public source |
 | Pulsar, Kysona M600, VXE Dragonfly R1 Pro / MAD R, ATK VXE R1 SE | USB dongle or cable | One "power" request (shared protocol of these brands) | Unverified |
 | Glorious Model O / O- / D / D- Wireless | USB receiver or cable | One "get" command sent as a feature report, then the feature reply | Unverified; shown as charging while on the cable |
-| Corsair wireless mice | USB receiver | — | Not supported yet: the public tools switch the mouse to "software mode" first, which is not read-only |
+| Corsair wireless mice through a Slipstream receiver (Dark Core RGB PRO / PRO SE, Harpoon RGB Wireless, generic Slipstream receivers) | USB receiver | Bragi "get property" for battery level and status | Unverified; the reference tools first switch the mouse to "software mode", this app does not (read-only), so a mouse that only answers in that mode shows no level. A generic receiver is shown as "Corsair Slipstream device" (it may pair a keyboard). Mice on their cable are not covered |
 | Other enthusiast mice and keyboards (LAMZU, Endgame Gear, VAXEE, Finalmouse, ZOWIE, Keychron, ASUS ROG, ...) | — | — | Not supported: no public battery protocol found |
 | Razer BlackShark V2 Pro (PlayStation) | USB dongle | Needs the dongle switched to another mode to read the headset | Not supported: breaks the read-only device rule |
 | Memzuiox mouse (`248A:8366` receiver) | 2.4 GHz receiver | None found: report 5 is static receiver data | Not supported |
