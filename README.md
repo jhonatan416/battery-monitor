@@ -27,7 +27,8 @@ specification but not yet tested on a real device of that kind.
 | AirPods / AirPods Pro / AirPods Max / Beats | Bluetooth | The battery advertisement the earbuds broadcast (Bluetooth LE, received passively), in 10 % steps | Unverified; shown only while AirPods/Beats are connected to this PC and Windows reports no level for them. The tray needs a few seconds after start to hear an advert, so `--once` usually shows nothing |
 | Sony INZONE H5 / H9 II / INZONE Buds | USB dongle | H5, H9 II: one battery "get" request; Buds: report the dongle sends by itself | Unverified; older INZONE models have no public source |
 | Jabra Evolve2 65 Flex / Evolve3 75 / Link 380 / Link 390 | USB or Link dongle | One battery "get" request (Jabra GN protocol) | Unverified |
-| Samsung Galaxy Buds, JBL, MOONDROP | Bluetooth | Shown only when Windows reports their level (Bluetooth row) | No vendor protocol read: Galaxy Buds need a serial channel Samsung's app may hold; JBL and MOONDROP have no public source |
+| Samsung Galaxy Buds+ and later (Live, Pro, Buds2, Buds2 Pro, FE, ...) | Bluetooth | Each poll opens the buds' serial channel, listens up to 3 s for the status message they send by themselves, and closes it; nothing is written | Unverified; skipped when Windows already shows their level. If Samsung's app holds the channel the buds show no level. Original 2019 Galaxy Buds not supported (other framing) |
+| JBL, MOONDROP | Bluetooth | Shown only when Windows reports their level (Bluetooth row) | No vendor protocol: no public source |
 | Phone (Phone Link) | — | — | Not supported: Phone Link has no public API |
 | Steam Controller (original, wired or wireless dongle; 2026 model) | USB / Steam dongle | Battery event the controller sends by itself | Unverified |
 | 8BitDo Ultimate 3 / Ultimate 2 Wireless (firmware 1.03+) | USB / receiver | Battery byte of the input report | Unverified; other 8BitDo models need a mode request first and are not read |
@@ -98,7 +99,7 @@ Hexagonal (ports and adapters):
 BatteryMonitor.Core   (no Windows dependencies, fully unit tested)
   Domain/       DeviceBattery, DeviceKind
   Ports/        IBatteryProvider          <- one adapter per device family
-  Protocols/    RazerProtocol, LogitechHidpp, PlayStationProtocol, HidBattery, XInputBattery,
+  Protocols/    RazerProtocol, LogitechHidpp, PlayStationProtocol, HidBattery, XInputBattery, GalaxyBuds,
                 BluetoothBattery, HidPath (pure decoding)
   Protocols/Headsets/  HeadsetCatalog + SteelSeries, HyperX, Corsair, Sony INZONE, Jabra, Logitech/ASTRO, MCHOSE
                        query sequences over the IHidLink port
@@ -110,7 +111,7 @@ BatteryMonitor.Core   (no Windows dependencies, fully unit tested)
 
 BatteryMonitor.App    (Windows adapters + UI)
   Hid/          HID enumeration, feature reports, input/output stream, standard battery fields
-  Providers/    Bluetooth, Razer, Logitech, PlayStation, Headset, Gamepad, AppleAudio, XInput, GenericHid,
+  Providers/    Bluetooth, Razer, Logitech, PlayStation, Headset, Gamepad, AppleAudio, GalaxyBuds, XInput, GenericHid,
                 HeadsetControl (*BatteryProvider)
   Settings/     SettingsStore (%APPDATA% file), StartupRegistration (HKCU Run key)
   Tray/         TrayApplicationContext, DeviceTrayIcon (two frames), BatteryIconRenderer
