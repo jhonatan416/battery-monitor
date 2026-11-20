@@ -12,6 +12,7 @@ public sealed class HidLink(HidStream stream) : IHidLink
     private static readonly TimeSpan ReplyTimeout = TimeSpan.FromMilliseconds(400);
     private static readonly TimeSpan DrainTimeout = TimeSpan.FromMilliseconds(5);
     private static readonly TimeSpan ListenFor = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan FeatureSettle = TimeSpan.FromMilliseconds(50);
     private const int MaxReportsPerExchange = 8, MaxDrained = 32;
 
     public byte[]? Exchange(byte[] request, Func<byte[], bool>? isReply = null)
@@ -36,6 +37,18 @@ public sealed class HidLink(HidStream stream) : IHidLink
             if (isReport(report)) return report;
         }
         return null;
+    }
+
+    public byte[]? FeatureExchange(byte[] request)
+    {
+        if (stream.FeatureLength == 0 || request.Length > stream.FeatureLength) return null;
+        var buffer = new byte[stream.FeatureLength];
+        request.CopyTo(buffer, 0);
+        if (!stream.SetFeature(buffer)) return null;
+        Thread.Sleep(FeatureSettle); // the device needs a moment before the reply is ready
+        var reply = new byte[stream.FeatureLength];
+        reply[0] = request[0];
+        return stream.GetFeature(reply) ? reply : null;
     }
 
     public void Drain()

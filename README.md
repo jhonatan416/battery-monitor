@@ -34,6 +34,12 @@ specification but not yet tested on a real device of that kind.
 | Flydigi Apex / Apex 6 / Vader (V2) | USB receiver | One "get info" request | Unverified |
 | GameSir controllers | USB receiver | None: no public battery source | Not supported |
 | Any headset HeadsetControl supports | USB | The external [HeadsetControl](https://github.com/Sapd/HeadsetControl) tool, only when `headsetControlPath` is set | Optional, off by default |
+| SteelSeries Aerox 3 / 5 / 9 Wireless, Prime Wireless, Prime Mini Wireless, Rival 3 Wireless (+ Gen 2), Rival 650 Wireless | USB receiver or cable | One battery "get" request (facts from rivalcfg) | Unverified |
+| HyperX Pulsefire Dart | USB receiver or cable | One "heartbeat" request | Unverified; other HyperX mice have no public source |
+| Pulsar, Kysona M600, VXE Dragonfly R1 Pro / MAD R, ATK VXE R1 SE | USB dongle or cable | One "power" request (shared protocol of these brands) | Unverified |
+| Glorious Model O / O- / D / D- Wireless | USB receiver or cable | One "get" command sent as a feature report, then the feature reply | Unverified; shown as charging while on the cable |
+| Corsair wireless mice | USB receiver | — | Not supported yet: the public tools switch the mouse to "software mode" first, which is not read-only |
+| Other enthusiast mice and keyboards (LAMZU, Endgame Gear, VAXEE, Finalmouse, ZOWIE, Keychron, ASUS ROG, ...) | — | — | Not supported: no public battery protocol found |
 | Razer BlackShark V2 Pro (PlayStation) | USB dongle | Needs the dongle switched to another mode to read the headset | Not supported: breaks the read-only device rule |
 | Memzuiox mouse (`248A:8366` receiver) | 2.4 GHz receiver | None found: report 5 is static receiver data | Not supported |
 | kofire UG-06 headset (`4C4A:4155`) | USB dongle | Unknown | Not supported yet |
@@ -91,6 +97,7 @@ BatteryMonitor.Core   (no Windows dependencies, fully unit tested)
                 BluetoothBattery, HidPath (pure decoding)
   Protocols/Headsets/  HeadsetCatalog + SteelSeries, HyperX, Corsair, Sony INZONE, Jabra query sequences over the IHidLink port
   Protocols/Gamepads/  SteamController, EightBitDo, Flydigi (plus HeadsetControlOutput in Protocols/)
+  Protocols/Mice/      MiceCatalog: SteelSeries, HyperX, ATK (Pulsar/VXE/Kysona), Glorious query sequences
   Monitoring/   BatteryMonitorService     (merges providers, grace period, low-battery alerts)
   Settings/     AppSettings, SettingsSerializer (validation, never throws)
   Icons/        IconPixels (pixel-font layout), DevicePictures (device pixel art)
@@ -114,6 +121,8 @@ Protocol facts for Razer devices come from the public documentation of the
 [HeadsetControl](https://github.com/Sapd/HeadsetControl); Steam Controller, 8BitDo and Flydigi facts
 from [SDL](https://github.com/libsdl-org/SDL) (zlib license); AirPods advertisement facts from
 [OpenPods](https://github.com/adolfintel/OpenPods), [AirStatus](https://github.com/delphiki/AirStatus) and
-[furiousMAC/continuity](https://github.com/furiousMAC/continuity). The idea was inspired by
+[furiousMAC/continuity](https://github.com/furiousMAC/continuity); mouse facts from
+[rivalcfg](https://github.com/flozz/rivalcfg), [hid-pulsar](https://gitlab.com/NikolasK-source/hid-pulsar),
+[madr](https://github.com/dkbednarczyk/madr), [mow](https://github.com/korkje/mow) and public HyperX Pulsefire Dart write-ups. The idea was inspired by
 [Wireless-Device-Battery-Monitor](https://github.com/krisgfx9/Wireless-Device-Battery-Monitor).
 No code from either project is included.

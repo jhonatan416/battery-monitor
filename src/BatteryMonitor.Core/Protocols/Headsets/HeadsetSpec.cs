@@ -22,13 +22,20 @@ public interface IHidLink
     /// </summary>
     byte[]? Listen(Func<byte[], bool> isReport);
 
+    /// <summary>
+    /// Sends <paramref name="request"/> (a "get" command) as a feature report (padded by the link),
+    /// then reads back the feature report with the same id. Null if either step fails.
+    /// </summary>
+    byte[]? FeatureExchange(byte[] request);
+
     /// <summary>Discards input reports that are already waiting.</summary>
     void Drain();
 }
 
 /// <summary>
-/// One headset family: which USB ids and HID collection it uses, and how to query its battery.
-/// The collection is chosen by usage page:usage when known, else by USB interface number.
+/// One device family (headsets, and since slice 6 also mice): which USB ids and HID collection it
+/// uses, and how to query its battery. The collection is chosen by usage page:usage when both are
+/// known, else by USB interface number.
 /// </summary>
 public sealed record HeadsetSpec(
     string Name,
@@ -37,7 +44,8 @@ public sealed record HeadsetSpec(
     ushort? UsagePage,
     ushort? Usage,
     int? Interface,
-    Func<IHidLink, ushort, HeadsetStatus?> Query);
+    Func<IHidLink, ushort, HeadsetStatus?> Query,
+    Domain.DeviceKind Kind = Domain.DeviceKind.Headset);
 
 internal static class HeadsetMath
 {

@@ -33,6 +33,22 @@ internal sealed class ScriptedLink : IHidLink
         return null;
     }
 
+    private readonly Dictionary<string, byte[]> _features = new();
+
+    /// <summary>Feature report returned by the GET that follows a SET of <paramref name="request"/>.</summary>
+    public ScriptedLink OnFeature(byte[] request, byte[] reply)
+    {
+        _features[Convert.ToHexString(request)] = reply;
+        return this;
+    }
+
+    public byte[]? FeatureExchange(byte[] request)
+    {
+        string key = Convert.ToHexString(request);
+        Sent.Add("F:" + key);
+        return _features.GetValueOrDefault(key);
+    }
+
     private readonly Queue<byte[]> _unsolicited = new();
 
     /// <summary>Input reports the device sends without being asked (returned by Listen).</summary>
