@@ -34,7 +34,7 @@ specification but not yet tested on a real device of that kind.
 | Flydigi Apex / Apex 6 / Vader (V2) | USB receiver | One "get info" request | Unverified |
 | GameSir controllers | USB receiver | None: no public battery source | Not supported |
 | Any headset HeadsetControl supports | USB | The external [HeadsetControl](https://github.com/Sapd/HeadsetControl) tool, only when `headsetControlPath` is set | Optional, off by default |
-| Logitech PRO X 2 LIGHTSPEED | USB receiver | One battery "get" request (the one older firmware answers) | Unverified; newer firmware uses Logitech's "Centurion" protocol, not implemented yet |
+| Logitech PRO X 2 LIGHTSPEED | USB receiver | Logitech "Centurion" protocol: feature lookups and one battery "get" through the dongle's bridge; older firmware: one battery "get" request | Unverified |
 | ASTRO A50 (Gen 4 on PC mode, Gen 5) | Base station | One battery "get" request; Gen 4 first checks that the headset is linked (the base keeps the last level after it turns off) | Unverified |
 | MCHOSE X9 Wireless / V9 Pro | USB dongle | One battery query | Unverified |
 | Logitech G435 | USB dongle | — | Not supported: no public read-only battery command |
