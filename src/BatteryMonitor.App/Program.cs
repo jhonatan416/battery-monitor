@@ -35,6 +35,7 @@ internal static class Program
             Recorded(new HeadsetBatteryProvider("Mice", "mouse", Core.Protocols.Mice.MiceCatalog.All)),
             Recorded(new GamepadBatteryProvider()),
             new AppleAudioBatteryProvider(() => bluetooth.LastPollConnectedNames, () => bluetooth.LastPollNamesWithLevel),
+            new GalaxyBudsBatteryProvider(() => bluetooth.LastPollNamesWithLevel),
             new XInputBatteryProvider(() => bluetooth.LastPollSawGamepad),
             Recorded(new GenericHidBatteryProvider(vendorsWithOwnProvider, ProductHasOwnProvider)),
             new HeadsetControlBatteryProvider(settings.Settings.HeadsetControlPath, recentUsb.Contains),
