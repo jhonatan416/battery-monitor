@@ -3,6 +3,9 @@
 A small Windows tray app that shows the battery level of wireless devices: one tray icon per device,
 a tooltip with details, and a notification when a device drops below 20 %.
 
+**[Download the latest version](https://github.com/jhonatan416/battery-monitor/releases/latest)**:
+a portable zip for Windows 10 2004 or later (x64), no install needed. See [Download](#download).
+
 Each icon switches every 3 seconds between a picture of the device (mouse, gamepad, headset,
 keyboard, or a battery for other devices) and the percent, drawn in a crisp pixel font. Both are
 colored by level: green above 50 %, yellow from 21 to 50 %, red at 20 % or less, blue while charging,
