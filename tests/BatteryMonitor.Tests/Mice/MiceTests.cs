@@ -169,9 +169,10 @@ public class MiceTests
     [Fact]
     public void Every_mouse_is_a_mouse_and_has_a_collection_hint()
     {
+        // Exception: a generic Corsair Slipstream receiver may pair a keyboard as well as a mouse.
         Assert.All(MiceCatalog.All, s =>
         {
-            Assert.Equal(DeviceKind.Mouse, s.Kind);
+            Assert.Equal(s.Name == "Corsair Slipstream device" ? DeviceKind.Other : DeviceKind.Mouse, s.Kind);
             Assert.True(s.UsagePage is not null || s.Interface is not null, s.Name);
         });
     }
