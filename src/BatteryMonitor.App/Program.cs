@@ -21,22 +21,23 @@ internal static class Program
         bool ProductHasOwnProvider(ushort vid, ushort pid) =>
             Core.Protocols.Headsets.HeadsetCatalog.Find(vid, pid) is not null || Core.Protocols.Mice.MiceCatalog.Find(vid, pid) is not null
             || GamepadBatteryProvider.NameFor(vid, pid) is not null;
-        IBatteryProvider[] providers = // order matters: Bluetooth runs first so XInput can avoid duplicates
+        // USB devices the dedicated providers reported recently: HeadsetControl skips only those, so a headset our
+        // code cannot read (unknown model, newer firmware) still shows up through it, and nothing shows twice.
+        var recentUsb = new RecentProducts(TimeProvider.System, TimeSpan.FromMinutes(2));
+        IBatteryProvider Recorded(IBatteryProvider p) => new RecordingProvider(p, recentUsb);
+        IBatteryProvider[] providers = // order matters: Bluetooth first (XInput dedupe), HeadsetControl last (USB dedupe)
         [
             bluetooth,
-            new RazerBatteryProvider(),
-            new LogitechBatteryProvider(),
-            new PlayStationBatteryProvider(),
-            new HeadsetBatteryProvider(),
-            new HeadsetBatteryProvider("Mice", "mouse", Core.Protocols.Mice.MiceCatalog.All),
-            new GamepadBatteryProvider(),
+            Recorded(new RazerBatteryProvider()),
+            Recorded(new LogitechBatteryProvider()),
+            Recorded(new PlayStationBatteryProvider()),
+            Recorded(new HeadsetBatteryProvider()),
+            Recorded(new HeadsetBatteryProvider("Mice", "mouse", Core.Protocols.Mice.MiceCatalog.All)),
+            Recorded(new GamepadBatteryProvider()),
             new AppleAudioBatteryProvider(() => bluetooth.LastPollConnectedNames, () => bluetooth.LastPollNamesWithLevel),
             new XInputBatteryProvider(() => bluetooth.LastPollSawGamepad),
-            new GenericHidBatteryProvider(vendorsWithOwnProvider, ProductHasOwnProvider),
-            new HeadsetControlBatteryProvider(settings.Settings.HeadsetControlPath,
-                // Only products another provider really reads: the Logitech HID++ provider covers Logitech
-                // headsets, but no provider reads Razer or Sony headsets (e.g. the BlackShark V2 Pro).
-                (vid, pid) => vid == LogitechHidpp.VendorId || ProductHasOwnProvider(vid, pid)),
+            Recorded(new GenericHidBatteryProvider(vendorsWithOwnProvider, ProductHasOwnProvider)),
+            new HeadsetControlBatteryProvider(settings.Settings.HeadsetControlPath, recentUsb.Contains),
         ];
         var options = new MonitorOptions { LowThreshold = settings.Settings.LowBatteryThreshold };
         var monitor = new BatteryMonitorService(providers, TimeProvider.System, options);

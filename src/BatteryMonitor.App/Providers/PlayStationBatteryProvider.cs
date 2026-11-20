@@ -33,7 +33,8 @@ public sealed class PlayStationBatteryProvider : IBatteryProvider
                 DeviceKind.Gamepad,
                 bluetooth ? "Bluetooth" : "USB",
                 reading.Percent,
-                reading.Charging));
+                reading.Charging,
+                Usb: bluetooth ? null : new UsbProduct(coll.VendorId, coll.ProductId)));
         }
         return result;
     }

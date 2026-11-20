@@ -16,9 +16,17 @@ public static class LogitechHeadsets
         new("ASTRO A50 (Gen 4)", AstroVendorId, [0x002C], 0xFF32, 0x0074, 6, (l, _) => AstroA50Gen4(l)),
     ];
 
-    // Older-firmware request (newer firmware answers through Logitech's "Centurion" protocol, not
-    // implemented): reply 51 0B .. [8] 04, [10] percent, [12] 02 = charging.
+    // Newer firmware answers through Logitech's "Centurion" protocol. The older request is tried when
+    // the dongle does not speak Centurion or the headset has no Centurion battery feature (as in
+    // HeadsetControl), never when the headset is off.
     private static HeadsetStatus? ProX2(IHidLink link)
+    {
+        var (outcome, status) = LogitechCenturion.Battery(link);
+        return outcome == LogitechCenturion.Outcome.Unsupported ? ProX2Legacy(link) : status;
+    }
+
+    // Older-firmware request: reply 51 0B .. [8] 04, [10] percent, [12] 02 = charging.
+    private static HeadsetStatus? ProX2Legacy(IHidLink link)
     {
         byte[] get = [0x51, 0x08, 0x00, 0x03, 0x1A, 0x00, 0x03, 0x00, 0x04, 0x0A];
         var r = link.Exchange(get, x => x.Length >= 13 && x[0] == 0x51 && x[1] == 0x0B && x[8] == 0x04);

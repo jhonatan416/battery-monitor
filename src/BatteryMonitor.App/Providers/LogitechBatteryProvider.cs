@@ -45,7 +45,8 @@ public sealed class LogitechBatteryProvider : IBatteryProvider
             kind,
             receiver ? "Logitech receiver" : "USB",
             reading.Percent,
-            reading.Charging);
+            reading.Charging,
+            Usb: new UsbProduct(coll.VendorId, coll.ProductId));
     }
 
     private static LogitechBatteryReading? ReadBattery(HidStream stream, byte index)
