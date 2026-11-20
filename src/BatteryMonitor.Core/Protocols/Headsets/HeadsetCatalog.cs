@@ -8,7 +8,8 @@ namespace BatteryMonitor.Core.Protocols.Headsets;
 public static class HeadsetCatalog
 {
     public static IReadOnlyList<HeadsetSpec> All { get; } =
-        [.. SteelSeriesHeadsets.Specs, .. HyperXHeadsets.Specs, .. CorsairHeadsets.Specs];
+        [.. SteelSeriesHeadsets.Specs, .. HyperXHeadsets.Specs, .. CorsairHeadsets.Specs, .. SonyInzoneHeadsets.Specs,
+         .. JabraHeadsets.Specs];
 
     public static IReadOnlySet<ushort> VendorIds { get; } = All.Select(s => s.VendorId).ToHashSet();
 

@@ -24,6 +24,11 @@ specification but not yet tested on a real device of that kind.
 | SteelSeries Arctis 1 / 7 / 9 / Pro Wireless / 7+ / Nova 3P / Nova 5 / Nova 7 / Nova Pro Wireless | USB receiver | Vendor status request per family (facts from the public HeadsetControl definitions) | Unverified |
 | HyperX Cloud II Wireless / Cloud Flight / Cloud Alpha Wireless / Cloud Alpha 2 Wireless | USB receiver | Vendor status request per family; Cloud Flight level estimated from voltage | Unverified |
 | Corsair Void (wireless family) / Virtuoso XT & SE / Void Wireless V2, Virtuoso MAX, HS80 MAX | USB receiver | Vendor status request; Virtuoso and V2 report tenths of a percent | Unverified |
+| AirPods / AirPods Pro / AirPods Max / Beats | Bluetooth | The battery advertisement the earbuds broadcast (Bluetooth LE, received passively), in 10 % steps | Unverified; shown only while AirPods/Beats are connected to this PC and Windows reports no level for them. The tray needs a few seconds after start to hear an advert, so `--once` usually shows nothing |
+| Sony INZONE H5 / H9 II / INZONE Buds | USB dongle | H5, H9 II: one battery "get" request; Buds: report the dongle sends by itself | Unverified; older INZONE models have no public source |
+| Jabra Evolve2 65 Flex / Evolve3 75 / Link 380 / Link 390 | USB or Link dongle | One battery "get" request (Jabra GN protocol) | Unverified |
+| Samsung Galaxy Buds, JBL, MOONDROP | Bluetooth | Shown only when Windows reports their level (Bluetooth row) | No vendor protocol read: Galaxy Buds need a serial channel Samsung's app may hold; JBL and MOONDROP have no public source |
+| Phone (Phone Link) | — | — | Not supported: Phone Link has no public API |
 | Steam Controller (original, wired or wireless dongle; 2026 model) | USB / Steam dongle | Battery event the controller sends by itself | Unverified |
 | 8BitDo Ultimate 3 / Ultimate 2 Wireless (firmware 1.03+) | USB / receiver | Battery byte of the input report | Unverified; other 8BitDo models need a mode request first and are not read |
 | Flydigi Apex / Apex 6 / Vader (V2) | USB receiver | One "get info" request | Unverified |
@@ -35,7 +40,7 @@ specification but not yet tested on a real device of that kind.
 
 ## Build and run
 
-Requires the .NET 10 SDK on Windows.
+Requires the .NET 10 SDK on Windows 10 2004 (build 19041) or later.
 
 ```bash
 dotnet build -c Release
@@ -84,7 +89,7 @@ BatteryMonitor.Core   (no Windows dependencies, fully unit tested)
   Ports/        IBatteryProvider          <- one adapter per device family
   Protocols/    RazerProtocol, LogitechHidpp, PlayStationProtocol, HidBattery, XInputBattery,
                 BluetoothBattery, HidPath (pure decoding)
-  Protocols/Headsets/  HeadsetCatalog + SteelSeries, HyperX, Corsair query sequences over the IHidLink port
+  Protocols/Headsets/  HeadsetCatalog + SteelSeries, HyperX, Corsair, Sony INZONE, Jabra query sequences over the IHidLink port
   Protocols/Gamepads/  SteamController, EightBitDo, Flydigi (plus HeadsetControlOutput in Protocols/)
   Monitoring/   BatteryMonitorService     (merges providers, grace period, low-battery alerts)
   Settings/     AppSettings, SettingsSerializer (validation, never throws)
@@ -92,7 +97,7 @@ BatteryMonitor.Core   (no Windows dependencies, fully unit tested)
 
 BatteryMonitor.App    (Windows adapters + UI)
   Hid/          HID enumeration, feature reports, input/output stream, standard battery fields
-  Providers/    Bluetooth, Razer, Logitech, PlayStation, Headset, Gamepad, XInput, GenericHid,
+  Providers/    Bluetooth, Razer, Logitech, PlayStation, Headset, Gamepad, AppleAudio, XInput, GenericHid,
                 HeadsetControl (*BatteryProvider)
   Settings/     SettingsStore (%APPDATA% file), StartupRegistration (HKCU Run key)
   Tray/         TrayApplicationContext, DeviceTrayIcon (two frames), BatteryIconRenderer
@@ -107,6 +112,8 @@ and registering it in `Program.cs`.
 Protocol facts for Razer devices come from the public documentation of the
 [OpenRazer](https://github.com/openrazer/openrazer) project; headset facts from
 [HeadsetControl](https://github.com/Sapd/HeadsetControl); Steam Controller, 8BitDo and Flydigi facts
-from [SDL](https://github.com/libsdl-org/SDL) (zlib license). The idea was inspired by
+from [SDL](https://github.com/libsdl-org/SDL) (zlib license); AirPods advertisement facts from
+[OpenPods](https://github.com/adolfintel/OpenPods), [AirStatus](https://github.com/delphiki/AirStatus) and
+[furiousMAC/continuity](https://github.com/furiousMAC/continuity). The idea was inspired by
 [Wireless-Device-Battery-Monitor](https://github.com/krisgfx9/Wireless-Device-Battery-Monitor).
 No code from either project is included.

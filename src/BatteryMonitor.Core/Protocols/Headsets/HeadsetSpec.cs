@@ -16,6 +16,12 @@ public interface IHidLink
     /// </summary>
     byte[]? Exchange(byte[] request, Func<byte[], bool>? isReply = null);
 
+    /// <summary>
+    /// Reads the input reports the device sends by itself, without sending anything, and returns
+    /// the first one <paramref name="isReport"/> accepts, or null when none arrives in time.
+    /// </summary>
+    byte[]? Listen(Func<byte[], bool> isReport);
+
     /// <summary>Discards input reports that are already waiting.</summary>
     void Drain();
 }

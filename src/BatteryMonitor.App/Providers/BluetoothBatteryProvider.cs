@@ -16,13 +16,27 @@ public sealed class BluetoothBatteryProvider : IBatteryProvider
     /// <summary>True when the latest poll reported a gamepad (used by XInput to avoid duplicates).</summary>
     public bool LastPollSawGamepad { get; private set; }
 
+    /// <summary>Names of the paired devices that were connected at the latest poll (battery or not).</summary>
+    public IReadOnlyList<string> LastPollConnectedNames { get; private set; } = [];
+
+    /// <summary>Names of the devices the latest poll reported a level for.</summary>
+    public IReadOnlyList<string> LastPollNamesWithLevel { get; private set; } = [];
+
     public IReadOnlyList<DeviceBattery> Poll()
     {
         var result = new List<DeviceBattery>();
+        var connected = new List<string>();
         foreach (string enumerator in new[] { "BTHLE", "BTHENUM" })
-            foreach (var (instanceId, name, level) in Native.DevicesWithBattery(enumerator))
-                result.Add(new DeviceBattery($"bt:{instanceId}", name, GuessKind(name), "Bluetooth", level));
+            foreach (var (instanceId, name, isConnected, battery) in Native.PairedDevices(enumerator))
+            {
+                if (isConnected == true) connected.Add(name);
+                if (battery is null) continue; // no battery (e.g. a speaker)
+                result.Add(new DeviceBattery($"bt:{instanceId}", name, GuessKind(name), "Bluetooth",
+                    BluetoothBattery.Percent(battery, isConnected)));
+            }
         LastPollSawGamepad = result.Any(d => d.Kind == DeviceKind.Gamepad && d.Percent is not null); // connected only
+        LastPollConnectedNames = connected;
+        LastPollNamesWithLevel = result.Where(d => d.Percent is not null).Select(d => d.Name).ToList();
         return result;
     }
 
@@ -51,8 +65,8 @@ public sealed class BluetoothBatteryProvider : IBatteryProvider
         // "Connected" state of a paired Bluetooth device (DEVPROP_TYPE_BOOLEAN: 0x00 false, 0xFF true).
         private static readonly DEVPROPKEY ConnectedKey = new() { fmtid = new Guid("83DA6326-97A6-4088-9453-A1923F573B29"), pid = 15 };
 
-        /// <summary>Paired devices that have a battery property; Level is null while disconnected.</summary>
-        public static IEnumerable<(string InstanceId, string Name, int? Level)> DevicesWithBattery(string enumerator)
+        /// <summary>Paired devices with their "connected" property and raw battery property (null when absent).</summary>
+        public static IEnumerable<(string InstanceId, string Name, bool? Connected, byte? Battery)> PairedDevices(string enumerator)
         {
             IntPtr set = SetupDiGetClassDevsW(IntPtr.Zero, enumerator, IntPtr.Zero, DIGCF_PRESENT | DIGCF_ALLCLASSES);
             if (set == new IntPtr(-1)) yield break;
@@ -65,11 +79,10 @@ public sealed class BluetoothBatteryProvider : IBatteryProvider
                     // Only the device node itself (BTHLE\DEV_..., BTHENUM\DEV_...), not its service children.
                     if (!id.StartsWith(enumerator + "\\DEV_", StringComparison.OrdinalIgnoreCase)) continue;
                     byte[]? battery = Property(set, ref info, BatteryKey);
-                    if (battery is not { Length: > 0 }) continue; // no battery (e.g. a speaker)
                     byte[]? connected = Property(set, ref info, ConnectedKey);
                     bool? isConnected = connected is { Length: > 0 } ? connected[0] != 0 : null;
                     string name = Utf16(Property(set, ref info, FriendlyNameKey)) ?? id;
-                    yield return (id, name, BluetoothBattery.Percent(battery[0], isConnected));
+                    yield return (id, name, isConnected, battery is { Length: > 0 } ? battery[0] : null);
                 }
             }
             finally { SetupDiDestroyDeviceInfoList(set); }

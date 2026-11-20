@@ -7,7 +7,7 @@ using BatteryMonitor.Core.Protocols.Headsets;
 namespace BatteryMonitor.App.Providers;
 
 /// <summary>
-/// SteelSeries, HyperX and Corsair wireless headsets (see <see cref="HeadsetCatalog"/>). Picks the
+/// SteelSeries, HyperX, Corsair, Sony INZONE and Jabra headsets (see <see cref="HeadsetCatalog"/>). Picks the
 /// collection each family uses and runs its battery query through a <see cref="HidLink"/>.
 /// </summary>
 public sealed class HeadsetBatteryProvider : IBatteryProvider
@@ -39,12 +39,15 @@ public sealed class HeadsetBatteryProvider : IBatteryProvider
         return null;
     }
 
-    /// <summary>Usage page:usage when the family declares it, else the USB interface number.</summary>
+    /// <summary>
+    /// Usage page:usage when the family declares it, else the USB interface number; a family that
+    /// declares neither (it only listens) tries every collection.
+    /// </summary>
     private static bool Matches(HeadsetSpec spec, HidCollection coll)
     {
         if (spec.UsagePage is ushort page && spec.Usage is ushort usage)
             return HidBatteryReader.TopLevelUsage(coll) == (page, usage);
-        if (spec.Interface is not int iface) return false;
+        if (spec.Interface is not int iface) return true;
         string path = coll.Path.ToLowerInvariant();
         return path.Contains($"&mi_{iface:x2}") || (iface == 0 && !path.Contains("&mi_")); // single-interface device
     }
