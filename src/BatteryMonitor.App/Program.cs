@@ -19,7 +19,8 @@ internal static class Program
         var bluetooth = new BluetoothBatteryProvider();
         var vendorsWithOwnProvider = new HashSet<ushort> { RazerBatteryProvider.VendorId, LogitechHidpp.VendorId, PlayStationProtocol.SonyVendorId };
         bool ProductHasOwnProvider(ushort vid, ushort pid) =>
-            Core.Protocols.Headsets.HeadsetCatalog.Find(vid, pid) is not null || GamepadBatteryProvider.NameFor(vid, pid) is not null;
+            Core.Protocols.Headsets.HeadsetCatalog.Find(vid, pid) is not null || Core.Protocols.Mice.MiceCatalog.Find(vid, pid) is not null
+            || GamepadBatteryProvider.NameFor(vid, pid) is not null;
         IBatteryProvider[] providers = // order matters: Bluetooth runs first so XInput can avoid duplicates
         [
             bluetooth,
@@ -27,6 +28,7 @@ internal static class Program
             new LogitechBatteryProvider(),
             new PlayStationBatteryProvider(),
             new HeadsetBatteryProvider(),
+            new HeadsetBatteryProvider("Mice", "mouse", Core.Protocols.Mice.MiceCatalog.All),
             new GamepadBatteryProvider(),
             new AppleAudioBatteryProvider(() => bluetooth.LastPollConnectedNames, () => bluetooth.LastPollNamesWithLevel),
             new XInputBatteryProvider(() => bluetooth.LastPollSawGamepad),
